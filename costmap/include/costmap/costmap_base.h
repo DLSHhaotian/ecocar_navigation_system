@@ -10,6 +10,7 @@
 #include <vector>
 #include <queue>
 #include <geometry_msgs/Point.h>
+#include <boost/thread.hpp>
 namespace costmap {
     //storing x/y point pairs
     struct mapIndex{
@@ -29,67 +30,68 @@ namespace costmap {
 
 
         //convert from two map coordinates to index of 1-D array
-        unsigned int get_MapToIndex(unsigned int mapX, unsigned int mapY) const {return mapX*sizeX_+sizeY_;}
+        unsigned int get_MapToIndex(unsigned int mapX, unsigned int mapY) const;
         //convert from index of 1-D array to two map coordinates
-        void indexToMap(unsigned int index, unsigned int& mapX,unsigned int& mapY) const
-        {
-            mapY=index/sizeX_;
-            mapX=index-(mapY*sizeX_);
-        }
+        void indexToMap(unsigned int index, unsigned int& mapX,unsigned int& mapY) const;
         //convert from map coordinates(start from 0) to world coordinates
-        void mapToWorld(unsigned int mapX,unsigned int mapY,double& worldX,double& worldY) const
-        {
-            worldX=originX_+(mapX+0.5)*resolution_;
-            worldY=originY_+(mapY+0.5)*resolution_;
-        }
+        void mapToWorld(unsigned int mapX,unsigned int mapY,double& worldX,double& worldY) const;
         //convert from world coordinates to map coordinates
-        bool worldToMap(double worldX,double worldY,unsigned int& mapX,unsigned int& mapY) const
-        {
-            if(worldX<originX_||worldY<originY_){return false;}
-            mapX=(int)((worldX-originX_)/resolution_);
-            mapY=(int)((worldY-originY_)/resolution_);
-            if(mapX<sizeX_&&mapY<sizeY_){return true;}
-            return false;
-        }
+        bool worldToMap(double worldX,double worldY,unsigned int& mapX,unsigned int& mapY) const;
 
         //get the pointer of map(cell)
-        unsigned char* get_mapChar() const{return mapChar_;}
-        unsigned char get_cost(unsigned int mapX,unsigned int mapY) const{return mapChar_[get_MapToIndex(mapX,mapY)];}
-        void set_cost(unsigned int mapX,unsigned int mapY,unsigned char cost)
-        {
-            mapChar_[get_MapToIndex(mapX,mapY)]=cost;
-        }
-        //get the number of cells in the map X
-        unsigned int get_mapSizeX() const{return sizeX_;}
-        //get the number of cells in the map Y
-        unsigned int get_mapSizeY() const{return sizeY_;}
-        //get the size(m) of map X(from origin point to last point)
-        double get_mapSizeX_meter() const{return (sizeX_-1+0.5)*resolution_;}
-        //get the size(m) of map Y(from origin point to last point)
-        double get_mapSizeY_meter() const{return (sizeY_-1+0.5)*resolution_;}
-        //get the x(m) of map's origin point in world coordinate
-        double get_originX() const{return originX_;}
-        //get the y(m) of map's origin point in world coordinate
-        double get_originY() const{return originY_;}
-        //get the resolution
-        double get_Resolution() const{return resolution_;}
-        //get the cost default value
-        unsigned char get_costDefaultValue() const{return costDefaultValue_;}
+        unsigned char* get_mapChar() const;
+        unsigned char get_cost(unsigned int mapX,unsigned int mapY) const;
 
+        //get the number of cells in the map X
+        unsigned int get_mapSizeX() const;
+        //get the number of cells in the map Y
+        unsigned int get_mapSizeY() const;
+        //get the size(m) of map X(from origin point to last point)
+        double get_mapSizeX_meter() const;
+        //get the size(m) of map Y(from origin point to last point)
+        double get_mapSizeY_meter() const;
+        //get the x(m) of map's origin point in world coordinate
+        double get_originX() const;
+        //get the y(m) of map's origin point in world coordinate
+        double get_originY() const;
+        //get the resolution
+        double get_Resolution() const;
+        //get the cost default value
+        unsigned char get_costDefaultValue() const;
+        boost::recursive_mutex* get_mutex() const;
+
+
+        void updateOrigin(double originX_new,double originY_new);
+        void resizeMap(unsigned int sizeX,unsigned int sizeY,double resolution,double originX,double originY);
+        void set_cost(unsigned int mapX,unsigned int mapY,unsigned char cost);
+        void set_costDefaultValue(unsigned char costDefasultValue);
     protected:
-        virtual void initMap();
-        virtual void deleteMap();
-        virtual void resetMap();
+        virtual void initMap_(unsigned int sizeX,unsigned int sizeY);
+        virtual void deleteMap_();
+        virtual void resetMap_();
+        //Copy the memory space of the selected part of the map
+        //.Pointer to source map(first cell)
+        //2.The bottom left x point of the source map(cell number)
+        //3.The bottom left y point of the source map(cell number)
+        //4.The x size of the source map(cell number)
+        //5.Pointer to destination map(first cell)
+        //6.The bottom left x point of the destination map(cell number)
+        //7.The bottom left y point of the destination map(cell number)
+        //8.The x size of the destination map(cell number)
+        //9.The x size of the region to copy(cell number)
+        //10.The y size of the region to copy(cell number)
+        void copyMapRegion(unsigned char* source_map,unsigned int sourceX,unsigned int sourceY,unsigned int sourceSizeX,unsigned char* destMap,unsigned int destX,unsigned int destY,unsigned int destSizeX,unsigned int regionSizeX,unsigned int regionSizeY);
+
     protected:
         unsigned int sizeX_;//The number of cells in the map X coordinate
         unsigned int sizeY_;//The number of cells in the map Y coordinate
         double resolution_;// m/cell
-        double originX_;// bottom left point
+        double originX_;// The map only contains the part in front of the r
         double originY_;
         unsigned char* mapChar_;//cell's pointer
         unsigned char costDefaultValue_;//default cost value of cell
     private:
-        //mutex_t* access_;
+        boost::recursive_mutex* mutex_;
 
     };
 }//namespace costmap end

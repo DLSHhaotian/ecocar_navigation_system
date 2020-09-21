@@ -20,7 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_ros
   visualization_msgs
 )
-
+find_package(Boost REQUIRED COMPONENTS system thread)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -114,7 +114,7 @@ catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES costmap
 #  CATKIN_DEPENDS geometry_msgs message_generation nav_msgs pluginlib roscpp sensor_msgs std_msgs tf2 tf2_geometry_msgs tf2_ros tf2_sensor_msgs visualization_msgs
-#  DEPENDS system_lib
+  DEPENDS Boost
 )
 
 ###########
@@ -126,6 +126,7 @@ catkin_package(
 include_directories(
         include
   ${catkin_INCLUDE_DIRS}
+        ${Boost_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -215,8 +216,11 @@ include_directories(
 add_executable( costmap_node
         src/costmap_node.cpp
         src/costmap_base.cpp
+        src/costLayer_base.cpp
+        src/costLayer_manager.cpp
         )
 
 target_link_libraries(costmap_node
         ${catkin_LIBRARIES}
+        ${Boost_LIBRARIES}
         )
