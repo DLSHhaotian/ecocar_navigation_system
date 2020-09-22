@@ -71,6 +71,7 @@
   <build_export_depend>tf2_ros</build_export_depend>
   <build_export_depend>visualization_msgs</build_export_depend>
   <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>message_runtime</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>pluginlib</exec_depend>
   <exec_depend>roscpp</exec_depend>
@@ -85,6 +86,6 @@
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->
-
+      <costmap plugin="${prefix}/costmap_plugins.xml" />
   </export>
 </package>

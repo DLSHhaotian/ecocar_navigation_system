@@ -112,8 +112,8 @@ find_package(Boost REQUIRED COMPONENTS system thread)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-#  LIBRARIES costmap
-#  CATKIN_DEPENDS geometry_msgs message_generation nav_msgs pluginlib roscpp sensor_msgs std_msgs tf2 tf2_geometry_msgs tf2_ros tf2_sensor_msgs visualization_msgs
+  LIBRARIES costmap layers
+  CATKIN_DEPENDS geometry_msgs nav_msgs pluginlib roscpp sensor_msgs std_msgs tf2 tf2_geometry_msgs tf2_ros visualization_msgs
   DEPENDS Boost
 )
 
@@ -213,14 +213,33 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-add_executable( costmap_node
-        src/costmap_node.cpp
+
+add_library(costmap
         src/costmap_base.cpp
         src/costLayer_base.cpp
         src/costLayer_manager.cpp
+        src/costmapLayer.cpp
+        )
+add_dependencies(costmap ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(costmap
+        ${Boost_LIBRARIES}
+        ${catkin_LIBRARIES}
+        )
+add_library(layers
+        plugin/staticMapLayer.cpp plugin/obstacleMapLayer.cpp)
+add_dependencies(layers ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(layers
+        costmap
         )
 
+add_executable( costmap_node
+        src/costmap_node.cpp
+        )
+add_dependencies(costmap_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 target_link_libraries(costmap_node
+        costmap
+        layers
         ${catkin_LIBRARIES}
         ${Boost_LIBRARIES}
         )

@@ -25,6 +25,10 @@ namespace costmap {
                   double originX, double originY, unsigned char costDefaultValue = 0);
         //default constructor
         costmap_base();
+        //copy constructor
+        costmap_base(const costmap_base& map);
+        //copy operator
+        costmap_base& operator=(const costmap_base& map);
         //destructor
         virtual ~costmap_base();
 
@@ -37,7 +41,8 @@ namespace costmap {
         void mapToWorld(unsigned int mapX,unsigned int mapY,double& worldX,double& worldY) const;
         //convert from world coordinates to map coordinates
         bool worldToMap(double worldX,double worldY,unsigned int& mapX,unsigned int& mapY) const;
-
+        //convert from world coordinates to map coordinates in bounds
+        void worldToMapBounds(double worldX,double worldY,int& mapX, int& mapY) const;
         //get the pointer of map(cell)
         unsigned char* get_mapChar() const;
         unsigned char get_cost(unsigned int mapX,unsigned int mapY) const;
@@ -63,6 +68,7 @@ namespace costmap {
 
         void updateOrigin(double originX_new,double originY_new);
         void resizeMap(unsigned int sizeX,unsigned int sizeY,double resolution,double originX,double originY);
+        void resetMap(unsigned int boundX0, unsigned int boundY0, unsigned int boundXn, unsigned int boundYn);
         void set_cost(unsigned int mapX,unsigned int mapY,unsigned char cost);
         void set_costDefaultValue(unsigned char costDefasultValue);
     protected:

@@ -8,14 +8,33 @@ namespace costmap{
     costmap_base::costmap_base(unsigned int sizeX, unsigned int sizeY, double resolution,
                                double originX, double originY, unsigned char costDefaultValue):
                                sizeX_(sizeX),sizeY_(sizeY),resolution_(resolution),originX_(originX),originY_(originY),costDefaultValue_(costDefaultValue),mapChar_(nullptr){
-        mutex_=new boost::recursive_mutex;
+        mutex_=new boost::recursive_mutex();
         //initialize the costmap
         initMap_(sizeX_,sizeY_);
         resetMap_();
     }
+    //default constructor
     costmap_base::costmap_base():
         sizeX_(0),sizeY_(0),resolution_(0),originX_(0),originY_(0),costDefaultValue_(0),mapChar_(nullptr){
-        mutex_=new boost::recursive_mutex;
+        mutex_=new boost::recursive_mutex();
+    }
+    //copy constructor
+    costmap_base::costmap_base(const costmap_base& map):mapChar_(nullptr){
+        mutex_=new boost::recursive_mutex();
+        *this=map;
+    }
+    //copy operator
+    costmap_base& costmap_base::operator=(const costmap_base &map) {
+        if(this==&map)
+            return *this;
+        deleteMap_();
+        sizeX_=map.sizeX_;
+        sizeY_=map.sizeY_;
+        resolution_=map.resolution_;
+        originX_=map.originX_;
+        originY_=map.originY_;
+        initMap_(sizeX_,sizeY_);
+        memcpy(mapChar_,map.mapChar_,sizeX_*sizeY_*sizeof(unsigned char));
     }
     costmap_base::~costmap_base() {
         deleteMap_();
@@ -45,7 +64,20 @@ namespace costmap{
         if(mapX<sizeX_&&mapY<sizeY_){return true;}
         return false;
     }
+    void costmap_base::worldToMapBounds(double worldX, double worldY, int &mapX, int &mapY) const {
+        if(worldX<originX_)
+            {mapX=0;}
+        else if(worldX>=originX_+resolution_*sizeX_)
+            {mapX=sizeX_-1;}
+        else{mapX=(int)((worldX-originX_)/resolution_);}
 
+        if(worldY<originY_)
+            {mapY=0;}
+        else if(worldY>=originY_+resolution_*sizeY_)
+            {mapX=sizeY_-1;}
+        else{mapY=(int)((worldY-originY_)/resolution_);}
+
+    }
     //get the pointer of map(cell)
     unsigned char* costmap_base::get_mapChar() const{return mapChar_;}
     unsigned char costmap_base::get_cost(unsigned int mapX,unsigned int mapY) const{return mapChar_[get_MapToIndex(mapX,mapY)];}
@@ -114,6 +146,14 @@ namespace costmap{
         initMap_(sizeX,sizeY);
         resetMap_();
     }
+    void costmap_base::resetMap(unsigned int boundX0, unsigned int boundY0, unsigned int boundXn,
+                                unsigned int boundYn) {
+        boost::unique_lock<boost::recursive_mutex> lock(*mutex_);
+        unsigned int lenX=boundXn-boundX0;
+        for(unsigned int y=boundY0*sizeX_+boundX0;y<boundYn*sizeX_+boundX0;y+=sizeX_){
+            memset(mapChar_+y,costDefaultValue_,lenX*sizeof(unsigned char));
+        }
+    }
     void costmap_base::set_cost(unsigned int mapX,unsigned int mapY,unsigned char cost){
         mapChar_[get_MapToIndex(mapX,mapY)]=cost;
     }
@@ -141,7 +181,7 @@ namespace costmap{
                                      unsigned int sourceSizeX, unsigned char *destMap, unsigned int destX,
                                      unsigned int destY, unsigned int destSizeX, unsigned int regionSizeX,
                                      unsigned int regionSizeY) {
-        //pute the starting point(pointer to cell) of region in the source map and destination map
+        //compute the starting point(pointer to cell) of region in the source map and destination map
         unsigned char* source_start=sourceMap+(sourceY*sourceSizeX+sourceX);
         unsigned char* dest_start=destMap+(destY*destSizeX+destX);
         //start copy

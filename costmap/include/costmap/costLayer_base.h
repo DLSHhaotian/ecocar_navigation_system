@@ -22,12 +22,12 @@ namespace costmap{
         void initialize(costLayer_manager* parent,std::string name,tf2_ros::Buffer *tf);
         virtual void updateBound(double robotX, double robotY, double robotTheta, double* minX, double* minY,
                          double* maxX, double* maxY){}
-        virtual void updateCost(costmap_base& master_grid, int min_i, int min_j, int max_i, int max_j){}
+        virtual void updateCost(costmap_base& master_grid, int boundX0, int boundY0, int boundXn, int boundYn){}
 
         virtual void matchParentSize(){}
         virtual void deactivate(){}
         virtual void activate(){}
-
+        virtual void reset() {}
         bool isCurrent() const;
         std::string getName() const;
     protected:

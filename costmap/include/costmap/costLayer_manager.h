@@ -26,8 +26,9 @@ namespace costmap{
         bool isLocalMap();
         bool isInitialized();
         bool isSizeLocked();
-        costLayer_base* getCostmapMaster();
+        costmap_base* getCostmapMaster();
         std::vector<boost::shared_ptr<costLayer_base>>* getPlugins();
+        std::string getGlobalFrame() const;
 
 
     private:
