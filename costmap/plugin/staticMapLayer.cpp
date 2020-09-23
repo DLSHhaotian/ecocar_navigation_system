@@ -93,4 +93,37 @@ namespace costmap{
         dataUpdated_=false;
 
     }
+    void staticMapLayer::updateCost(costmap_base &master_grid, int boundX0, int boundY0, int boundXn, int boundYn) {
+        if(!mapReceived_)
+            return;
+        if(manager_->isLocalMap()){
+            unsigned int mapX=0,mapY=0;
+            double worldX=0,worldY=0;
+            geometry_msgs::TransformStamped transform;
+            try{
+                transform=tf_->lookupTransform(mapFrame_,globalFrame_,ros::Time(0));
+            }
+            catch(tf2::TransformException ex){
+                ROS_ERROR("%s",ex.what());
+                return;
+            }
+            //convert type of transformation
+            tf2::Transform tf2_tranform;
+            tf2::convert(transform.transform,tf2_tranform);
+            //write the cost into master map
+            for(unsigned int index_x=boundX0;index_x<boundXn;++index_x){
+                for(unsigned int index_y=boundY0;index_y<boundYn;++index_y){
+                    //convert master map coordinate to world coordinate
+                    master_grid.mapToWorld(index_x,index_y,worldX,worldY);
+                    //transform from global_frame to map_frame(static map frame)(in world coordinate)
+                    tf2::Vector3 point(worldX,worldY,0);
+                    point=tf2_tranform*point;
+                    //convert from world coordinate to map coordinate
+                    if(worldToMap(point.x(),point.y(),mapX,mapY)){
+                        master_grid.set_cost(index_x,index_y,get_cost(mapX,mapY));
+                    }
+                }
+            }
+        }
+    }
 }

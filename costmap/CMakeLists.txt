@@ -226,7 +226,7 @@ target_link_libraries(costmap
         ${catkin_LIBRARIES}
         )
 add_library(layers
-        plugin/staticMapLayer.cpp plugin/obstacleMapLayer.cpp)
+        plugin/staticMapLayer.cpp plugin/obstacleMapLayer.cpp src/sensorInfo_buffer.cpp )
 add_dependencies(layers ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(layers
         costmap
