@@ -13,6 +13,10 @@ namespace costmap{
     public:
         costmapLayer();
         virtual void matchParentSize();
+
+    protected:
+        void updateBoundsForPoint(double x, double y, double* minX, double* minY, double* maxX, double* maxY);
+        void updateWithOverWrite(costmap::costmap_base& master, int minX, int minY, int maxX, int maxY);
     //private:
     };
 }

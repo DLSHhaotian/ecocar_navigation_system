@@ -158,4 +158,17 @@ namespace costmap{
     void sensorInfo_buffer::unlock() {
         sensorInfoMutex_.unlock();
     }
+    bool sensorInfo_buffer::isCurrent() {
+        if (expected_updateRate_ == ros::Duration(0.0))
+            return true;
+
+        bool current = (ros::Time::now() - lastUpdated_).toSec() <= expected_updateRate_.toSec();
+        if (!current)
+        {
+            ROS_WARN(
+                    "The %s observation buffer has not been updated for %.2f seconds, and it should be updated every %.2f seconds.",
+                    topicName_.c_str(), (ros::Time::now() - lastUpdated_).toSec(), expected_updateRate_.toSec());
+        }
+        return current;
+    }
 }

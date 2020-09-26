@@ -78,6 +78,63 @@ namespace costmap{
         else{mapY=(int)((worldY-originY_)/resolution_);}
 
     }
+
+    unsigned int costmap_base::worldToMapDistance(double distWorld){
+        double distCell=std::max(0.0,std::ceil(distWorld/resolution_));
+        return (unsigned int)distCell;
+    }
+
+    template <class cellType>
+    void costmap_base::rayTraceLine(cellType cellMark, unsigned int x0, unsigned int y0, unsigned int x1,
+                                    unsigned int y1, unsigned int maxLength) {
+        int dx=x1-x0;
+        int dy=y1-y0;
+
+        unsigned int abs_dx=abs(dx);
+        unsigned int abs_dy=abs(dy);
+
+        int offset_dx=sign(dx);
+        int offset_dy=sign(dy)*sizeX_;
+
+        unsigned int offset=y0*sizeX_+x0;
+        //scale based on the given raytraceRange
+        double dist=std::hypot(dx,dy);
+        double scale=(dist==0)? 1.0:std::min(1.0,maxLength/dist);
+
+        //x line is dominant
+        if (abs_dx >= abs_dy){
+            int error_y = abs_dx / 2;
+            bresenham2D(cellMark, abs_dx, abs_dy, error_y, offset_dx, offset_dy, offset, (unsigned int)(scale * abs_dx));
+        }
+        else {
+            // otherwise y is dominant
+            int error_x = abs_dy / 2;
+            bresenham2D(cellMark, abs_dy, abs_dx, error_x, offset_dy, offset_dx, offset,
+                        (unsigned int) (scale * abs_dy));
+        }
+    }
+
+
+    template<class cellType>
+   void costmap_base::bresenham(cellType at, unsigned int abs_da, unsigned int abs_db, int error_b, int offset_a,
+                                int offset_b, unsigned int offset, unsigned int max_length) {
+        unsigned int end = std::min(max_length, abs_da);
+        for (unsigned int i = 0; i < end; ++i)
+        {
+            at(offset);
+            offset += offset_a;
+            error_b += abs_db;
+            if ((unsigned int)error_b >= abs_da)
+            {
+                offset += offset_b;
+                error_b -= abs_da;
+            }
+        }
+        at(offset);
+    }
+
+
+
     //get the pointer of map(cell)
     unsigned char* costmap_base::get_mapChar() const{return mapChar_;}
     unsigned char costmap_base::get_cost(unsigned int mapX,unsigned int mapY) const{return mapChar_[get_MapToIndex(mapX,mapY)];}

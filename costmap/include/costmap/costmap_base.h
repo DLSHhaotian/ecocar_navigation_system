@@ -11,6 +11,7 @@
 #include <queue>
 #include <geometry_msgs/Point.h>
 #include <boost/thread.hpp>
+#include <cmath>
 namespace costmap {
     //storing x/y point pairs
     struct mapIndex{
@@ -43,6 +44,9 @@ namespace costmap {
         bool worldToMap(double worldX,double worldY,unsigned int& mapX,unsigned int& mapY) const;
         //convert from world coordinates to map coordinates in bounds
         void worldToMapBounds(double worldX,double worldY,int& mapX, int& mapY) const;
+        //convert the distance from world to map(cell)
+        unsigned int worldToMapDistance(double distWorld);
+
         //get the pointer of map(cell)
         unsigned char* get_mapChar() const;
         unsigned char get_cost(unsigned int mapX,unsigned int mapY) const;
@@ -88,6 +92,17 @@ namespace costmap {
         //10.The y size of the region to copy(cell number)
         void copyMapRegion(unsigned char* source_map,unsigned int sourceX,unsigned int sourceY,unsigned int sourceSizeX,unsigned char* destMap,unsigned int destX,unsigned int destY,unsigned int destSizeX,unsigned int regionSizeX,unsigned int regionSizeY);
 
+        template<class cellType>
+        void rayTraceLine(cellType cellMark,unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1,
+                          unsigned int maxLength = UINT_MAX);
+
+    private:
+        template<class cellType>
+        void bresenham(cellType at, unsigned int abs_da, unsigned int abs_db, int error_b, int offset_a,
+                       int offset_b, unsigned int offset, unsigned int max_length);
+        inline int sign(int x){
+            return x>0? 1:-1;
+        }
     protected:
         unsigned int sizeX_;//The number of cells in the map X coordinate
         unsigned int sizeY_;//The number of cells in the map Y coordinate
@@ -98,7 +113,18 @@ namespace costmap {
         unsigned char costDefaultValue_;//default cost value of cell
     private:
         boost::recursive_mutex* mutex_;
-
+    protected:
+        class markCell {
+        public:
+            markCell(unsigned char *costmap, unsigned char value) :mapChar_(costmap),costValue_(value){}
+            inline void operator()(unsigned int offset)
+            {
+                mapChar_[offset]=costValue_;
+            }
+        private:
+            unsigned char* mapChar_;
+            unsigned char costValue_;
+        };
     };
 }//namespace costmap end
 

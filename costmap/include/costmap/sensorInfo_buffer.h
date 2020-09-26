@@ -29,6 +29,7 @@ namespace costmap{
         void removeOldCloud();
         void lock();
         void unlock();
+        bool isCurrent();
     private:
         tf2_ros::Buffer& tf2Buffer_;
         const ros::Duration sensorInfo_keepTime_;
