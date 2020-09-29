@@ -1,0 +1,24 @@
+<launch>
+  
+    <!-- Launch Gazebo  -->
+    <include file="$(find hello_ros_gazebo)/launch/moveit_gazebo_world.launch" />
+
+    <!-- ros_control arm launch file -->
+    <include file="$(find hello_ros_gazebo)/launch/moveit_gazebo_states.launch" />   
+
+    <!-- ros_control trajectory control dof arm launch file -->
+    <include file="$(find hello_ros_gazebo)/launch/moveit_trajectory_controller.launch" />
+
+    <!-- moveit launch file -->
+    <include file="$(find hello_ros_moveit_confiig)/launch/move_group.launch" />
+
+<include file="$(find hello_ros_moveit_confiig)/launch/moveit_rviz.launch">
+  <arg name="rviz_config" value="true" />
+ </include>
+  	<!-- We do not have a robot connected, so publish fake joint states -->
+  	<node name="joint_state_publisher" pkg="joint_state_publisher" 					type="joint_state_publisher">
+    		<param name="/use_gui" value="false"/>
+    		<rosparam param="/source_list">[/hello_ros_robot/joint_states]</rosparam>
+  	</node>
+
+</launch>

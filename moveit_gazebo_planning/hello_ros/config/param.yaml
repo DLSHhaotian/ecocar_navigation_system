@@ -1,0 +1,11 @@
+rosdistro: 'melodic
+
+  '
+roslaunch:
+  uris: {host_dlsh_thinkpad_p1_gen_2__33629: 'http://dlsh-ThinkPad-P1-Gen-2:33629/'}
+rosversion: '1.14.7
+
+  '
+run_id: 087cb82c-f6b8-11ea-ba51-74d83e574081
+turtlesim: {background_b: 255, background_g: 86, background_r: 69}
+line_color: {line_r: 100, line_g: 100, line_b: 100}

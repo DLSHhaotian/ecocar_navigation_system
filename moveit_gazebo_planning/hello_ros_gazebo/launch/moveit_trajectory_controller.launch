@@ -1,0 +1,6 @@
+<launch>
+
+	<rosparam file="$(find hello_ros_gazebo)/config/movit_trajectory_control.yaml" command="load"/>
+	<node name="arm_controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" ns="/hello_ros_robot" args="arm_controller"/>
+
+</launch> 

@@ -1,0 +1,18 @@
+<launch>
+    <!-- Load the helo_ros_robot URDF model into the parameter server -->
+    <param name="robot_description" textfile="$(find hello_ros)/urdf/hello_gazebo_robot_2.urdf" />
+    <!-- Start Gazebo with an empty world -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch"/>
+    <!-- Spawn a helo_ros_robot in Gazebo, taking the description from the
+    parameter server -->
+    <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model"
+        args="-param robot_description -urdf -model hello_ros_robot" />
+ 
+    <rosparam file="$(find hello_ros)/config/controllers_simple.yaml" command="load"/>
+      <node name="controller_spawner" pkg="controller_manager" type="spawner"
+        args="arm_controller"/>
+      <!-- Convert /joint_states messages published by Gazebo to /tf messages,
+       e.g., for rviz-->
+      <node name="robot_state_publisher" pkg="robot_state_publisher"
+        type="robot_state_publisher"/>
+</launch>
