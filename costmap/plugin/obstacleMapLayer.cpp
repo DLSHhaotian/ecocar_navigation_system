@@ -25,7 +25,7 @@ namespace costmap{
         globalFrame_=manager_->getGlobalFrame();
         double transformTolerance;
         std::string topicClouds;
-        nh.param("transformTolerance",transformTolerance,0.2);
+        nh.param("transform_tolerance_",transformTolerance,0.2);
         nh.param("pointCloudSource",topicClouds,std::string(""));
         ROS_INFO("Subscribed to pointCloud topics: %s",topicClouds.c_str());
 

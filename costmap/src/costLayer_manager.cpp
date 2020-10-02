@@ -124,7 +124,7 @@ namespace costmap{
     costmap_base* costLayer_manager::getCostmapMaster() {
         return &costmapMaster_;
     }
-    void costLayer_manager::getBound(double &minX, double &minY, double &maxX, double &maxY) {
+    void costLayer_manager::getBound(unsigned int &minX, unsigned int &minY, unsigned int &maxX, unsigned int &maxY) {
         minX=boundX0_;
         minY=boundY0_;
         maxX=boundXn_;

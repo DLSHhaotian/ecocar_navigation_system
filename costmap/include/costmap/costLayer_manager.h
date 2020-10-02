@@ -21,7 +21,7 @@ namespace costmap{
                        bool sizeLocked = false);
         void addPlugin(boost::shared_ptr<costLayer_base> plugin);
 
-        void getBound(double& minX, double& minY, double& maxX, double& maxY);
+        void getBound(unsigned int& minX, unsigned int& minY, unsigned int& maxX, unsigned int& maxY);
         bool isCurrent();
         bool isLocalMap();
         bool isInitialized();

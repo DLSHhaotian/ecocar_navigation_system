@@ -78,18 +78,18 @@ namespace costmap{
             //transform the pointclound to global frame
             tf2Buffer_.transform(pointCloud,pointCloudGlobal,globalFrame_);
             //put computed pointCloudGlobal in our list
-            sensor_msgs::PointCloud2 pointCloundNew=*(sensorInfoList_.front().pointCloud_);
-            pointCloundNew.height=pointCloudGlobal.height;
-            pointCloundNew.width=pointCloudGlobal.width;
-            pointCloundNew.fields=pointCloudGlobal.fields;
-            pointCloundNew.is_bigendian=pointCloudGlobal.is_bigendian;
-            pointCloundNew.point_step=pointCloudGlobal.point_step;
-            pointCloundNew.row_step=pointCloudGlobal.row_step;
-            pointCloundNew.is_dense=pointCloudGlobal.is_dense;
+            sensor_msgs::PointCloud2 pointCloudNew=*(sensorInfoList_.front().pointCloud_);
+            pointCloudNew.height=pointCloudGlobal.height;
+            pointCloudNew.width=pointCloudGlobal.width;
+            pointCloudNew.fields=pointCloudGlobal.fields;
+            pointCloudNew.is_bigendian=pointCloudGlobal.is_bigendian;
+            pointCloudNew.point_step=pointCloudGlobal.point_step;
+            pointCloudNew.row_step=pointCloudGlobal.row_step;
+            pointCloudNew.is_dense=pointCloudGlobal.is_dense;
 
-            unsigned int pointCloudSize=pointCloundNew.height*pointCloundNew.width;
+            unsigned int pointCloudSize=pointCloudNew.height*pointCloudNew.width;
             //use modifier
-            sensor_msgs::PointCloud2Modifier modifier(pointCloundNew);
+            sensor_msgs::PointCloud2Modifier modifier(pointCloudNew);
             //resize the pointcloud
             modifier.resize(pointCloudSize);
 
@@ -99,7 +99,7 @@ namespace costmap{
             //iterator of data of pointCLoudGlobal
             std::vector<unsigned char>::const_iterator iterGlobal=pointCloudGlobal.data.begin();
             //iterator of data of pointCLoudNew
-            std::vector<unsigned char>::iterator iterNew=pointCloundNew.data.begin();
+            std::vector<unsigned char>::iterator iterNew=pointCloudNew.data.begin();
 
             //suited point number
             unsigned int pointCloudNewSize=0;
@@ -112,8 +112,8 @@ namespace costmap{
             }
             //resize the suited data
             modifier.resize(pointCloudNewSize);
-            pointCloundNew.header.stamp=pointCloud.header.stamp;
-            pointCloundNew.header.frame_id=pointCloudGlobal.header.frame_id;
+            pointCloudNew.header.stamp=pointCloud.header.stamp;
+            pointCloudNew.header.frame_id=pointCloudGlobal.header.frame_id;
         }
         catch (tf2::TransformException& ex)
         {

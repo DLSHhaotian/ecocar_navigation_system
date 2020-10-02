@@ -219,12 +219,13 @@ add_library(costmap
         src/costLayer_base.cpp
         src/costLayer_manager.cpp
         src/costmapLayer.cpp
-        )
+        src/costmap_system.cpp)
 add_dependencies(costmap ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(costmap
         ${Boost_LIBRARIES}
         ${catkin_LIBRARIES}
         )
+
 add_library(layers
         plugin/staticMapLayer.cpp plugin/obstacleMapLayer.cpp src/sensorInfo_buffer.cpp )
 add_dependencies(layers ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

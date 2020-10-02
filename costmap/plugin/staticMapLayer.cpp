@@ -19,12 +19,12 @@ namespace costmap{
         current_=true;
 
         globalFrame_=manager_->getGlobalFrame();
-        std::string inputMao_topic;
-        nh.param("map_topic",inputMao_topic,std::string("map"));
+        std::string inputMap_topic;
+        nh.param("map_topic",inputMap_topic,std::string("map"));
         nh.param("first_map_only", first_map_only_, false);
         //subscribe the input map
         ROS_INFO("Requesting the map");
-        map_sub_=g_nh.subscribe(inputMao_topic,1,&staticMapLayer::inputMap,this);
+        map_sub_=g_nh.subscribe(inputMap_topic,1,&staticMapLayer::inputMap,this);
         mapReceived_= false;
         dataUpdated_ = false;
 
