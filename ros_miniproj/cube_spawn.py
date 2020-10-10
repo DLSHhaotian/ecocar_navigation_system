@@ -26,7 +26,7 @@ if __name__ == '__main__':
         bin_x   =   random.uniform(0,0.5)
         item_name   =   "cube{}".format(num)
         print("Spawning model:%s", item_name)
-        item_pose   =   Pose(Point(x=bin_x, y=bin_y,    z=1),   orient)
+        item_pose   =   Pose(Point(x=bin_x, y=bin_y,    z=0.8),   orient)
         spawn_model(item_name, product_xml, "", item_pose, "world")
         rospy.set_param(item_name+"_XYZ",[bin_x,bin_y,1.0])
 

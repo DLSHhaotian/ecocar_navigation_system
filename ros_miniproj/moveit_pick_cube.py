@@ -11,6 +11,7 @@ import moveit_msgs.msg
 import geometry_msgs.msg
 import tf
 import shape_msgs.msg as shape_msgs
+import numpy as np
 from sensor_msgs.msg import JointState
 from numpy import zeros, array, linspace
 from math import ceil
@@ -24,7 +25,6 @@ def move_pick_cube():
     scene = moveit_commander.PlanningSceneInterface()
     group = moveit_commander.MoveGroupCommander("Arm")
     end_effector_link=group.get_end_effector_link()
-    #group.set_pose_reference_frame(group.get_end_effector_link())
     # trajectories for RVIZ to visualize.
     display_trajectory_publisher = rospy.Publisher(
         '/move_group/display_planned_path',
@@ -44,6 +44,8 @@ def move_pick_cube():
             scene.remove_world_object("cube{}".format(i))
     if "bucket" in scene.get_known_object_names():
         scene.remove_world_object("bucket")
+
+
     ##put cubes and bucket into moveit workspace
     ##load param into a list
     cube_bucket_orient=rospy.get_param("cube_bucket_orientRPY")
@@ -66,6 +68,7 @@ def move_pick_cube():
         cube_info.pose.position.y = cube_pose_list[i][1]
         cube_info.pose.position.z = table_height#table height
         cube_info.pose.orientation = orient_quat
+        print("cube{} x:{}, y:{}".format(i,cube_pose_list[i][0],cube_pose_list[i][1]))
         scene.add_box("cube{}".format(i), cube_info, (0.05,0.05,0.05))##found in cubic.urdf
     #prepare the bucket info
     bucket_info=geometry_msgs.msg.PoseStamped()
@@ -74,7 +77,7 @@ def move_pick_cube():
     bucket_info.pose.position.y = bucket_pose[1]
     bucket_info.pose.position.z = table_height
     bucket_info.pose.orientation = orient_quat
-    scene.add_box("bucket",bucket_info,(0.3,0.3,0.3))##cannot found in bucket.dae
+    scene.add_box("bucket",bucket_info,(0.2,0.2,0.2))##cannot found in bucket.dae
     print ("============moveit workspace loading finished")
 
 
@@ -87,10 +90,8 @@ def move_pick_cube():
     #################make hand towards table
     print("hand towards table")
     hand_pick_quat=geometry_msgs.msg.Quaternion(0.347709304721,-0.646715871525,0.298597553716,0.609669026475)
-    #waypoints1=list()
     pose_goal=group.get_current_pose(end_effector_link).pose
     ini_pose=pose_goal
-    #print(pose_goal)
     pose_goal.orientation = hand_pick_quat
     group.set_start_state_to_current_state()
     group.set_pose_target(pose_goal,end_effector_link)
@@ -112,7 +113,14 @@ def move_pick_cube():
     print ("============ Waiting while plan1 is visualized (again)...")
     rospy.sleep(2.)
 '''
-
+    base_x=0.5788
+    base_y=-0.0154
+    dis_threshold=0.6
+    for i_cube_check in xrange(0, cube_num):
+        dis=np.sqrt(np.square(cube_pose_list[i_cube_check][0]-base_x)+np.square(cube_pose_list[i_cube_check][1]-base_y))
+        if dis>dis_threshold:
+            print('cube{} is at a dangerous position in a distance:{} to the robot base, the task of picking cube{} might fail'.format(i_cube_check,dis,i_cube_check))
+        print('cube{} is at a reachable position in a distance:{} to the robot base'.format(i_cube_check,dis))
     for i_cube in xrange(0, cube_num):
         ######################### middle point
         print("cube{} go to middle point".format(i_cube))
@@ -128,25 +136,25 @@ def move_pick_cube():
         waypoints12 = list()
         pose_goal12 = group.get_current_pose(end_effector_link).pose
         ini_pose12 = pose_goal12
-        #print(pose_goal12)
-        waypoints12.append(pose_goal12)
+        waypoints12.append(copy.deepcopy(pose_goal12))
         pose_goal12.position.x = cube_pose_list[i_cube][0]
         pose_goal12.position.y = cube_pose_list[i_cube][1]
-        pose_goal12.position.z = table_height + 0.25
-        pose_goal12.orientation = hand_pick_quat
-        #print(pose_goal12)
-        waypoints12.append(pose_goal12)
+        pose_goal12.position.z = table_height + 0.2
+        waypoints12.append(copy.deepcopy(pose_goal12))
         # plan and execute
         fraction = 0.0
         attempts_max = 100
         attempts = 0
-        while fraction < 1.0 and attempts < attempts_max:
+        while fraction < 0.6 and attempts < attempts_max:
             (plan12, fraction) = group.compute_cartesian_path(waypoints12, 0.01, 0.0)
             attempts += 1
             if attempts % 10 == 0:
                 rospy.loginfo("Still trying after " + str(attempts) + " attempts...")
         ## Moving to a pose goal
-        if fraction == 1.0:
+        if fraction >0.4:#fraction == 1.0:
+            rospy.loginfo(
+                "Path planning  " + str(fraction) + " success after " + str(
+                    attempts_max) + " attempts.")
             rospy.loginfo("Path computed successfully. Moving the arm.")
             group.execute(plan12)
             rospy.loginfo("Path execution complete.")
@@ -179,39 +187,32 @@ def move_pick_cube():
         waypoints2 = list()
         pose_goal2 = group.get_current_pose(end_effector_link).pose
         ini_pose2 = pose_goal2
-        #print(pose_goal2)
-        waypoints2.append(pose_goal2)
+        waypoints2.append(copy.deepcopy(pose_goal2))
 
         pose_goal2.position.x = cube_pose_list[i_cube][0]
         pose_goal2.position.y = cube_pose_list[i_cube][1]
-        pose_goal2.position.z = table_height + 0.21
-        pose_goal2.orientation = hand_pick_quat
-        #print(pose_goal2)
-        waypoints2.append(pose_goal2)
-        pose_goal2.position.z = table_height + 0.19
-        #print(pose_goal2)
-        waypoints2.append(pose_goal2)
         pose_goal2.position.z = table_height + 0.17
-        #print(pose_goal2)
-        waypoints2.append(pose_goal2)
-        #plan and execute
+        waypoints2.append(copy.deepcopy(pose_goal2))
         fraction = 0.0
         attempts_max = 100
         attempts = 0
-        while fraction < 1.0 and attempts < attempts_max:
+        while fraction < 0.8 and attempts < attempts_max:
             (plan2, fraction) = group.compute_cartesian_path(waypoints2, 0.01, 0.0)
             attempts += 1
             if attempts % 10 == 0:
                 rospy.loginfo("Still trying after " + str(attempts) + " attempts...")
         ## Moving to a pose goal
-        if fraction == 1.0:
+        if fraction >0.8:#fraction == 1.0:
+            rospy.loginfo(
+                "Path planning  " + str(fraction) + " success after " + str(
+                    attempts_max) + " attempts.")
             rospy.loginfo("Path computed successfully. Moving the arm.")
             group.execute(plan2)
             rospy.loginfo("Path execution complete.")
         else:
             rospy.loginfo(
                 "Path planning failed with only " + str(fraction) + " success after " + str(attempts_max) + " attempts.")
-            continue
+            continue #the action of going down to the cube needs to be done perfectly, if not, quit
         rospy.sleep(1.)
 
         '''print ("============ Waiting while RVIZ displays plan1...")
@@ -252,18 +253,11 @@ def move_pick_cube():
 
         waypoints3 = list()
         pose_goal3 = group.get_current_pose(end_effector_link).pose
-        ini_pose3 = pose_goal3
+        ini_pose3 = copy.deepcopy(pose_goal3)
         #print(pose_goal3)
-        waypoints3.append(pose_goal3)
-
-        pose_goal3.position.z = ini_pose3.position.z + 0.15#0.3#have to use the x,y of current pose instead of cube's pose when going up
-        #pose_goal3.orientation = hand_pick_quat
-        #print(pose_goal3)
-        waypoints3.append(pose_goal3)
+        waypoints3.append(copy.deepcopy(pose_goal3))
         pose_goal3.position.z = ini_pose3.position.z + 0.2#0.4
-        #pose_goal3.orientation = hand_pick_quat
-        #print(pose_goal3)
-        waypoints3.append(pose_goal3)
+        waypoints3.append(copy.deepcopy(pose_goal3))
 
         fraction = 0.0
         attempts_max = 100
@@ -274,7 +268,10 @@ def move_pick_cube():
             if attempts % 10 == 0:
                 rospy.loginfo("Still trying after " + str(attempts) + " attempts...")
         ## Moving to a pose goal
-        if fraction == 1.0:
+        if fraction >0.4:#fraction == 1.0:
+            rospy.loginfo(
+                "Path planning  " + str(fraction) + " success after " + str(
+                    attempts_max) + " attempts.")
             rospy.loginfo("Path computed successfully. Moving the arm.")
             group.execute(plan3)
             rospy.loginfo("Path execution complete.")
@@ -308,14 +305,12 @@ def move_pick_cube():
         waypoints34 = list()
         pose_goal34 = group.get_current_pose(end_effector_link).pose
         ini_pose34 = pose_goal34
-        #print(pose_goal34)
-        waypoints34.append(pose_goal34)
+        waypoints34.append(copy.deepcopy(pose_goal34))
         pose_goal34.position.x = bucket_pose[0]
         pose_goal34.position.y = bucket_pose[1]
         pose_goal34.position.z = table_height + 0.6
         pose_goal34.orientation = hand_pick_quat
-        #print(pose_goal34)
-        waypoints34.append(pose_goal34)
+        waypoints34.append(copy.deepcopy(pose_goal34))
         (plan34, fraction) = group.compute_cartesian_path(waypoints34, 0.01, 0.0)
 
         '''print ("============ Waiting while RVIZ displays plan1...")
@@ -336,35 +331,18 @@ def move_pick_cube():
         waypoints4 = list()
         pose_goal4 = group.get_current_pose(end_effector_link).pose
         ini_pose4 = pose_goal4
-        #print(pose_goal4)
-        waypoints4.append(pose_goal4)
+        waypoints4.append(copy.deepcopy(pose_goal4))
+
         pose_goal4.position.x = bucket_pose[0]
         pose_goal4.position.y = bucket_pose[1]
         pose_goal4.position.z = table_height + 0.5
         pose_goal4.orientation = hand_pick_quat
         #print(pose_goal4)
-        waypoints4.append(pose_goal4)
-
-        pose_goal4.position.x = bucket_pose[0]
-        pose_goal4.position.y = bucket_pose[1]
-        pose_goal4.position.z = table_height + 0.4
-        pose_goal4.orientation = hand_pick_quat
-        #print(pose_goal4)
-        waypoints4.append(pose_goal4)
+        waypoints4.append(copy.deepcopy(pose_goal4))
 
         (plan4, fraction) = group.compute_cartesian_path(waypoints4, 0.01, 0.0)
 
-        '''print ("============ Waiting while RVIZ displays plan1...")
-        rospy.sleep(0.5)
 
-        print ("============ Visualizing plan1")
-        display_trajectory = moveit_msgs.msg.DisplayTrajectory()
-        display_trajectory.trajectory_start = robot.get_current_state()
-        display_trajectory.trajectory.append(plan4)
-        display_trajectory_publisher.publish(display_trajectory)
-        # print ("============ Waiting while plan1 is visualized (again)...")
-        # rospy.sleep(2.)
-'''
         ## Moving to a pose goal
         group.execute(plan4, wait=True)
         rospy.sleep(1.)
@@ -390,14 +368,11 @@ def move_pick_cube():
         waypoints5 = list()
         pose_goal5 = group.get_current_pose(end_effector_link).pose
         ini_pose5 = pose_goal5
-        #print(pose_goal5)
         waypoints5.append(pose_goal5)
         pose_goal5.position.z = table_height + 0.5  # have to use the x,y of current pose instead of bucket's pose when going up
         pose_goal5.orientation = hand_pick_quat
-        #print(pose_goal5)
         waypoints5.append(pose_goal5)
         pose_goal5.position.z = table_height + 0.6
-        #print(pose_goal5)
         waypoints5.append(pose_goal5)
 
         (plan5, fraction) = group.compute_cartesian_path(waypoints5, 0.01, 0.0)
@@ -419,11 +394,9 @@ def move_pick_cube():
     print("go back")
     waypoints6 = list()
     pose_goal6 = group.get_current_pose(end_effector_link).pose
-    #print(pose_goal6)
     waypoints6.append(pose_goal6)
 
     pose_goal6.position = ini_pose.position
-    #print(pose_goal6)
     waypoints6.append(pose_goal6)
 
     (plan6, fraction) = group.compute_cartesian_path(waypoints6, 0.01, 0.0)
