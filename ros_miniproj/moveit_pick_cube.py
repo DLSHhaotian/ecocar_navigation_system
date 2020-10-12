@@ -97,7 +97,7 @@ def move_pick_cube():
     base_x=0.5788
     base_y=-0.0154
     dis_threshold_far=0.6
-    dis_threshold_near=0.1
+    dis_threshold_near=0.26
     for i_cube_check in xrange(0, cube_num):
         dis=np.sqrt(np.square(cube_pose_list[i_cube_check][0]-base_x)+np.square(cube_pose_list[i_cube_check][1]-base_y))
         if dis>dis_threshold_far:
