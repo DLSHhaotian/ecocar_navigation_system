@@ -9,12 +9,8 @@ import tf_conversions
 import moveit_commander
 import moveit_msgs.msg
 import geometry_msgs.msg
-import tf
-import shape_msgs.msg as shape_msgs
 import numpy as np
 from sensor_msgs.msg import JointState
-from numpy import zeros, array, linspace
-from math import ceil
 
 def move_pick_cube():
     print ("============ Starting setup ============")
@@ -98,29 +94,18 @@ def move_pick_cube():
     plan1_1=group.plan()
     group.execute(plan1_1)
 
-
-
-
-
-    '''print ("============ Waiting while RVIZ displays plan1...")
-    rospy.sleep(0.5)
-
-    print ("============ Visualizing plan1")
-    display_trajectory = moveit_msgs.msg.DisplayTrajectory()
-    display_trajectory.trajectory_start = robot.get_current_state()
-    display_trajectory.trajectory.append(plan1)
-    display_trajectory_publisher.publish(display_trajectory);
-    print ("============ Waiting while plan1 is visualized (again)...")
-    rospy.sleep(2.)
-'''
     base_x=0.5788
     base_y=-0.0154
-    dis_threshold=0.6
+    dis_threshold_far=0.6
+    dis_threshold_near=0.1
     for i_cube_check in xrange(0, cube_num):
         dis=np.sqrt(np.square(cube_pose_list[i_cube_check][0]-base_x)+np.square(cube_pose_list[i_cube_check][1]-base_y))
-        if dis>dis_threshold:
-            print('cube{} is at a dangerous position in a distance:{} to the robot base, the task of picking cube{} might fail'.format(i_cube_check,dis,i_cube_check))
-        print('cube{} is at a reachable position in a distance:{} to the robot base'.format(i_cube_check,dis))
+        if dis>dis_threshold_far:
+            print('cube{} is at a dangerous position(too far) in a distance:{} to the robot base, the task of picking cube{} might fail'.format(i_cube_check,dis,i_cube_check))
+        elif dis<dis_threshold_near:
+            print('cube{} is at a dangerous position(too near) in a distance:{} to the robot base, the task of picking cube{} might fail'.format(i_cube_check,dis,i_cube_check))
+        else:
+            print('cube{} is at a reachable position in a distance:{} to the robot base'.format(i_cube_check,dis))
     for i_cube in xrange(0, cube_num):
         ######################### middle point
         print("cube{} go to middle point".format(i_cube))
@@ -166,22 +151,8 @@ def move_pick_cube():
             group.set_pose_target(pose_goal12, end_effector_link)
             plan12 = group.plan()
             group.execute(plan12)
-
-
         rospy.sleep(1.)
 
-
-        '''print ("============ Waiting while RVIZ displays plan1...")
-        rospy.sleep(0.5)
-
-        print ("============ Visualizing plan1")
-        display_trajectory = moveit_msgs.msg.DisplayTrajectory()
-        display_trajectory.trajectory_start = robot.get_current_state()
-        display_trajectory.trajectory.append(plan12)
-        display_trajectory_publisher.publish(display_trajectory);
-        print ("============ Waiting while plan1 is visualized (again)...")
-        rospy.sleep(2.)
-'''
         ########################go down to the cube
         print("cube{} go down to the cube".format(i_cube))
         waypoints2 = list()
@@ -214,20 +185,6 @@ def move_pick_cube():
                 "Path planning failed with only " + str(fraction) + " success after " + str(attempts_max) + " attempts.")
             continue #the action of going down to the cube needs to be done perfectly, if not, quit
         rospy.sleep(1.)
-
-        '''print ("============ Waiting while RVIZ displays plan1...")
-        rospy.sleep(0.5)
-
-        print ("============ Visualizing plan1")
-        display_trajectory = moveit_msgs.msg.DisplayTrajectory()
-        display_trajectory.trajectory_start = robot.get_current_state()
-        display_trajectory.trajectory.append(plan2)
-        display_trajectory_publisher.publish(display_trajectory)
-        #print ("============ Waiting while plan1 is visualized (again)...")
-        #rospy.sleep(2.)
-'''
-
-
 
         ##############################################################
         ################################################close the hand
@@ -287,18 +244,6 @@ def move_pick_cube():
             rospy.sleep(1.)
         rospy.sleep(1.)
 
-        '''print ("============ Waiting while RVIZ displays plan1...")
-        rospy.sleep(0.5)
-
-        print ("============ Visualizing plan1")
-        display_trajectory = moveit_msgs.msg.DisplayTrajectory()
-        display_trajectory.trajectory_start = robot.get_current_state()
-        display_trajectory.trajectory.append(plan3)
-        display_trajectory_publisher.publish(display_trajectory)
-        # print ("============ Waiting while plan1 is visualized (again)...")
-        # rospy.sleep(2.)
-'''
-
         ####################################################################
         ###########################################go to the upper of bucket
         print("cube{} go to the upper of bucket".format(i_cube))
@@ -313,17 +258,6 @@ def move_pick_cube():
         waypoints34.append(copy.deepcopy(pose_goal34))
         (plan34, fraction) = group.compute_cartesian_path(waypoints34, 0.01, 0.0)
 
-        '''print ("============ Waiting while RVIZ displays plan1...")
-        rospy.sleep(0.5)
-
-        print ("============ Visualizing plan1")
-        display_trajectory = moveit_msgs.msg.DisplayTrajectory()
-        display_trajectory.trajectory_start = robot.get_current_state()
-        display_trajectory.trajectory.append(plan34)
-        display_trajectory_publisher.publish(display_trajectory)
-        # print ("============ Waiting while plan1 is visualized (again)...")
-        # rospy.sleep(2.)
-'''
         ## Moving to a pose goal
         group.execute(plan34, wait=True)
         rospy.sleep(1.)
@@ -377,17 +311,6 @@ def move_pick_cube():
 
         (plan5, fraction) = group.compute_cartesian_path(waypoints5, 0.01, 0.0)
 
-        '''print ("============ Waiting while RVIZ displays plan1...")
-        rospy.sleep(0.5)
-
-        print ("============ Visualizing plan1")
-        display_trajectory = moveit_msgs.msg.DisplayTrajectory()
-        display_trajectory.trajectory_start = robot.get_current_state()
-        display_trajectory.trajectory.append(plan5)
-        display_trajectory_publisher.publish(display_trajectory)
-        # print ("============ Waiting while plan1 is visualized (again)...")
-        # rospy.sleep(2.)
-'''
         ## Moving to a pose goal
         group.execute(plan5, wait=True)
         rospy.sleep(1.)
@@ -401,17 +324,6 @@ def move_pick_cube():
 
     (plan6, fraction) = group.compute_cartesian_path(waypoints6, 0.01, 0.0)
 
-    '''print ("============ Waiting while RVIZ displays plan1...")
-    rospy.sleep(0.5)
-
-    print ("============ Visualizing plan1")
-    display_trajectory = moveit_msgs.msg.DisplayTrajectory()
-    display_trajectory.trajectory_start = robot.get_current_state()
-    display_trajectory.trajectory.append(plan6)
-    display_trajectory_publisher.publish(display_trajectory);
-    print ("============ Waiting while plan1 is visualized (again)...")
-    rospy.sleep(2.)
-'''
     ## Moving to a pose goal
     group.execute(plan6, wait=True)
     rospy.sleep(1.)
