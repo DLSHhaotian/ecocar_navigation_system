@@ -1,0 +1,10 @@
+PiksiRTKSync 1.0 uses TCP sockets with a specific port to communicate from one client to another.
+This requires that one of the two participants opens a server port on a static IP address and that no firewall blocks the port.
+
+
+PiksiRTKSync 2.0 uses a WebSocket server to communicate between clients.
+This requires an externally hosted always-on server running Node.js.
+The latency is bigger, but this is no concern for RTK sync.
+Once the server is set up, the Android app is significantly easier to use (input the server address, and then plug-and-play).
+
+https://bitbucket.org/dtucar/piksi-rtk-sync/

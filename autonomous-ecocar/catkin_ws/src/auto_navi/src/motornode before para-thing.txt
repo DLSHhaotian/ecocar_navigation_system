@@ -1,0 +1,217 @@
+#include "ros/ros.h"
+//#include "autonomous-ecocar/catkin_ws/src/navigation/global_variables.h"
+#include "std_msgs/Float32.h"
+#include "std_msgs/Float32MultiArray.h"
+#include "std_msgs/Int32.h"
+#include "std_msgs/Bool.h"
+#include "std_msgs/String.h"
+#include <cstdio>
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include <ctime>
+#include "dynamo_msgs/TeensyWrite.h"
+#include "dynamo_msgs/TeensyRead.h"
+#include "dynamo_msgs/Speak.h"
+#include "auto_navi/emergencyMsg.h"
+#include "dynamo_msgs/BrakeStepper.h"
+#include "auto_navi/motorMsg.h"
+
+//using namespace std;
+
+// this node is for testing the car's motor and burn function.
+
+int MAXSPEED_FAST = 16;
+int MINSPEED_FAST = 14;
+
+int MAXSPEED_SLOW = 16;
+int MINSPEED_SLOW = 14;
+
+int lastfast = 0;
+int fast=0;
+
+ros::Publisher teensyPub;
+ros::Publisher brake_pub;
+
+ros::Publisher speakpub;
+double drivendist, theta, x, y, speed, accel;
+double speed_end;
+
+double sonar = 6.0;
+int state=0;
+int first =1;
+int braking =0;
+int master_aktivator;
+ros::Duration t_diff;
+ros::Time t1, t2;
+double starting_drivendist, drivendiff;
+
+/*
+void carPoseCallback(const std_msgs::Float32MultiArray::ConstPtr& msg_carPoseEstimate) {
+	// store vlaues from odometry
+	x = msg_carPoseEstimate->data[0];
+	y = msg_carPoseEstimate->data[1];
+	theta = msg_carPoseEstimate->data[3];
+	speed = msg_carPoseEstimate->data[4];
+	accel = msg_carPoseEstimate->data[5];
+	drivendist = msg_carPoseEstimate->data[6];
+
+	// maybe print it
+	//ROS_INFO("Coordinates : [%f %f]",x, y);	// x,y [m]
+	//ROS_INFO("Orientation : [%f]", theta);	// theta [rad]
+	//ROS_INFO("driven_dist : [%f]",drivendist);	// drivendist [m]
+
+
+}*/
+
+void fastCallback (const auto_navi::motorMsg::ConstPtr& msg) {
+	lastfast = fast;
+	
+fast=msg->fast;
+
+	if(fast != lastfast){
+		dynamo_msgs::Speak speakmsg;
+
+		if(fast == 1){
+			speakmsg.textMessage = "Fast";
+		} else {
+			speakmsg.textMessage = "Slow";
+		}
+			speakmsg.sound = 0;
+			speakpub.publish(speakmsg);
+	}
+}
+
+void motor_brake_stop(const dynamo_msgs::BrakeStepperPtr& msg) {
+	if(msg->brake_power>0) braking=1;
+	if(msg->brake_power==0) braking =0;
+}
+
+
+void teensyCallback(const dynamo_msgs::TeensyReadPtr& msg) {
+	speed = msg->speed_wheel;
+	drivendist = msg->distance_wheel;
+	if (msg->distance_front < 5.0) sonar = msg->distance_front;
+}
+
+void motorTestScript() {
+	if (sonar <= 1.6) state = 4;
+	//if (sonar <= 2.2) state = 5;
+	ROS_INFO("Sonar: %f",sonar);
+
+	t2 = ros::Time::now();
+	t_diff = t2-t1;
+	if (first && t_diff.toSec() > 3.0) {
+		starting_drivendist = drivendist;
+		first = 0;
+		state = 1;
+	}
+	drivendiff = drivendist - starting_drivendist;
+	int burn = 0;
+
+
+	int MINSPEED;
+	int MAXSPEED;
+
+	if(fast==1){
+
+		MINSPEED = MINSPEED_FAST;
+		MAXSPEED = MAXSPEED_FAST;
+	}
+	if(fast==0){
+		MINSPEED = MINSPEED_SLOW;
+		MAXSPEED = MAXSPEED_SLOW;
+
+
+	}
+
+
+
+
+
+	if (drivendiff > 2000.0) state = 3; //run over
+	if (state == 1 && speed > MAXSPEED) state = 2; //over maxspeed
+	if (state == 2 && speed < MINSPEED) state = 1; //under minspeed
+
+	if (state==5) {
+		dynamo_msgs::BrakeStepper bremse;
+		bremse.brake_stepper_engaged = true;
+		bremse.brake_power = 0.0;
+		brake_pub.publish(bremse);
+	}
+	else if (state==4) {
+		dynamo_msgs::BrakeStepper bremse;
+		bremse.brake_stepper_engaged = true;
+		bremse.brake_power = 5.0;
+		brake_pub.publish(bremse);
+	}
+	else if (speed > MAXSPEED+1.5) {
+		//brems lidt ned her
+		dynamo_msgs::BrakeStepper bremse;
+		bremse.brake_stepper_engaged = true;
+		bremse.brake_power = 2.0;
+		brake_pub.publish(bremse);
+		state = 2;
+	} else {
+		dynamo_msgs::BrakeStepper bremse;
+		bremse.brake_stepper_engaged = true;
+		bremse.brake_power = 0;
+		brake_pub.publish(bremse);
+	}
+
+	if (state == 1) burn = 1;
+	if (state == 2 || state == 3 || braking || state == 4 ) burn = 0;
+
+	ROS_INFO("Speed: %f     drivendiff: %f     ",speed,drivendiff);
+
+    dynamo_msgs::TeensyWrite teensyMsg;
+    teensyMsg.burn = burn;
+    teensyMsg.autopilot_active = true;
+    teensyPub.publish(teensyMsg);
+
+}
+
+
+void emergencyCallback(const auto_navi::emergencyMsg::ConstPtr& msg) {
+	master_aktivator = msg->master_switch;
+	ROS_WARN("received shutdown");
+	if (master_aktivator == false) ros::shutdown();
+}
+
+
+
+
+int main(int argc, char **argv) {
+	// ini
+	ros::init(argc, argv, "motor_node");
+	ros::NodeHandle n;
+	t1 = ros::Time::now();
+
+	//ros::Subscriber sub = n.subscribe("car_pose_estimate", 1000, carPoseCallback);	// modtag messages på topic "car_pose_estimate" og send til funktionen carPoseCallback
+	ros::Subscriber sub2 = n.subscribe("cmd_master_switch", 10, emergencyCallback);
+	ros::Subscriber teensySub = n.subscribe("teensy_read", 1, teensyCallback);
+	ros::Subscriber brakeSub = n.subscribe("cmd_brake_power", 10, motor_brake_stop);
+	ros::Subscriber fastSub = n.subscribe("fast",0,fastCallback);
+	ros::Subscriber motorSub = n.subscribe("cmd_brake_power", 10, motor_brake_stop);
+	teensyPub = n.advertise<dynamo_msgs::TeensyWrite>("teensy_write", 100);
+	brake_pub = n.advertise<dynamo_msgs::BrakeStepper>("cmd_brake_power",10);
+	speakpub = n.advertise<dynamo_msgs::Speak>("speak", 10);
+
+	float loopRate = 100; // loop rate in [Hz]
+	ros::Rate r(loopRate);
+
+	while (ros::ok()) {
+		ros::spinOnce();
+
+		motorTestScript();
+
+		r.sleep();
+
+	}
+	ROS_INFO("hehehehe");
+	dynamo_msgs::TeensyWrite teensyMsg;
+    teensyMsg.burn = false;
+    teensyPub.publish(teensyMsg);
+
+	return 0;
+}

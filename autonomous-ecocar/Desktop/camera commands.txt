@@ -1,0 +1,15 @@
+RUN CAMERA
+rosrun usb_cam usb_cam_node _image_width:=2048 _image_height:=1536 _framerate:=15
+ROS_NAMESPACE=usb_cam rosrun image_proc image_proc
+
+CALIBRATED IMAGE PREVIEW
+rosrun image_view image_view image:=//usb_cam/image_rect_color compressed
+
+SAVE SINGLE TOP-VIEW CALIBRATION PHOTO - careful, it overwrites calibration photo that is already in the folder
+rosrun image_view image_saver image:=/usb_cam/image_rect_color _filename_format:=$HOME/catkin_ws/img/top_view_calibration.jpg _sec_per_frame:=1
+
+RUN PARKING SPOT DETECTION NODE
+rosrun parking_spot_detection parking_spot_detection
+
+SAVE DATA - add topic for odometry
+rosbag record /usb_cam/image_rect_color/compressed

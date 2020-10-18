@@ -1,0 +1,1 @@
+/usr/bin/c++  -fPIC -g  -shared -Wl,-soname,libMyQueue.so -o libMyQueue.so CMakeFiles/MyQueue.dir/my_queue.cpp.o 

@@ -1,0 +1,42 @@
+<?xml version="1.0" ?>
+<sdf version="1.4">
+  <world name="default">
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <!--<include>
+      <uri>model://ground_plane</uri>
+    </include>-->
+
+    <!-- Invisible ground plane -->
+    <model name="ground">
+      <link name="body">
+        <collision name="geom">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+            </plane>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>100</mu>
+                <mu2>500</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+      </link>
+      <static>true</static>
+    </model>
+
+    <!-- Insert road here -->
+
+
+    <plugin name="TrackPlugin" filename="libTrackPlugin.so">
+      <loop>true</loop>
+      <sharpTurns>true</sharpTurns>
+      <numGaps>0</numGaps>
+    </plugin>
+  </world>
+</sdf>

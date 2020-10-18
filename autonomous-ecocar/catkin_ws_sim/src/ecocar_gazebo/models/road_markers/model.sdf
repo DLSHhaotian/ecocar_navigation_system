@@ -1,0 +1,16 @@
+<?xml version='1.0'?>
+<sdf version="1.5">
+  <model name="road_markers">
+    <link name="base">
+      <visual name="markers">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <!-- The following empty tag is needed because otherwise a
+            default box of size 1 1 1 is put in as a geometry -->
+          <empty></empty>
+        </geometry>
+      </visual>
+    </link>
+    <static>true</static>
+  </model>
+</sdf>

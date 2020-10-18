@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="teensy" type="teensy_node" name="test_teensy_launch"/>
+</launch>

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=MJPG Streamer
+Comment=This starts the streaming server
+Exec=/home/dynamo/Scripts/launch_mjpg_streaming.sh
+Icon=/home/dynamo/Scripts/launch_mjpg_streaming_icon.png
+Terminal=true
+Type=Application

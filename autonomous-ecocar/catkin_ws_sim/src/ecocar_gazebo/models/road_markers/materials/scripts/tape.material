@@ -1,0 +1,14 @@
+material RoadMarkers/Tape
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture ../textures/tape.png
+        scale 1 0.05
+      }
+    }
+  }
+}

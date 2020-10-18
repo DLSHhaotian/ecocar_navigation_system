@@ -1,0 +1,8 @@
+<launch>
+  <node pkg="rosbag" type="play" name="rosbag" required="true" args="/home/thomas/ecocar/rosbags/2018-07-05-10-19-13.bag"/>
+  <node name="extract" pkg="image_view" type="extract_images" respawn="false" required="true" output="screen" cwd="ROS_HOME">
+    <remap from="image" to="/camera_out/image"/>
+  </node>
+</launch>
+
+<!-- Run together wiht: rosrun image_transport republish compress in:=/usb_cam/image_rect_color raw out:=/camera_out/image -->

@@ -1,0 +1,21 @@
+<launch>
+  <arg name="record_bag" default="true" />
+
+  <!-- Pose estimation -->
+  <node name="estimate_pose" pkg="navigation" type="estimate_pose"/>
+
+  <!-- LiDAR object detection -->
+  <node name="vlp16_sim_obst_detection" pkg="lidar_package" type="vlp16_sim_obst_detection" />
+  <!-- <node name="gate_classifier" pkg="lidar_package" type="gate_classifier" /> -->
+
+  <!-- Navigation -->
+  <node name="mission_control" pkg="auto_navi" type="mission_control" />
+  <node name="motor_node" pkg="auto_navi" type="motor_node" />
+  <node name="voronoi_node" pkg="auto_navi" type="voronoi_node" />
+  <node name="linedrive" pkg="auto_navi" type="linedrive" />
+  <!--<node name="follow_barrier" pkg="auto_navi" type="follow_barrier" output="screen"/>-->
+
+  <node pkg="rosbag" type="record" name="rosbag_simulation"
+       args="record /clouds_and_plane /car_pose_estimate /gyro_angle /point_clouds /sim/raw/distance_wheel /sim/raw/imu /sim/velodyne_points /teensy_read"
+       if="$(arg record_bag)" />
+</launch>

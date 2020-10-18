@@ -1,0 +1,8 @@
+prefix=/home/dlsh/gazebo/autonomous-ecocar/catkin_ws_sim/src/cmake-build-debug/devel
+
+Name: ecocar_gazebo
+Description: Description of ecocar_gazebo
+Version: 0.0.1
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: gazebo_ros message_runtime ecocar_gazebo_msgs std_msgs dynamo_msgs

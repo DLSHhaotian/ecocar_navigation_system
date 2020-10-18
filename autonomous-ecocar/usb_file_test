@@ -1,0 +1,12 @@
+"gyro gyro_node",
+"navigation estimate_pose",
+"velodyne_driver velodyne_node _model:=VLP16",
+"usb_cam usb_cam_node _image_width:=1280 _image_height:=960 _framerate:=15",
+"parking_spot_detection parking_spot_detection",
+"lidar_package vlp16_obst_detection",
+"steering_node steering_node",
+"brake brake_node",
+"auto_navi parking_node",
+"auto_navi motor_node",
+"auto_navi voronoi_node",                                            
+"auto_navi linedrive"

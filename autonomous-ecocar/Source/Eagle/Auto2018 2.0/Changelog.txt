@@ -1,0 +1,16 @@
+Auto2018 1.2
+- Moved Steering encoder to pins 29 & 30 (hardware decoder)
+- Moved TESTLED2 to pin 39 (from 34)
+- Added battery ADC to pin 32
+- Moved ADC8 to pin 34 (from 22)
+- Moved ADC9 to pin 31 (from 23)
+- Added buzzer to pin 35
+- Moved Brake Encoder connector to other side of board
+- Added connector for Sonar
+- Added 3V3 regulator for Sonar
+- Removed level converters for I2C (not needed, bus runs 3.3V)
+- Changed DC-DC converter and added input filter
+- Added additional I2C header
+- Removed USB connections
+- Added capacitors on connectors
+- Component renames

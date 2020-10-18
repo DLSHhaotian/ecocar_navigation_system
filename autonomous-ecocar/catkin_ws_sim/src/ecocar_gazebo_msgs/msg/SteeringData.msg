@@ -1,0 +1,6 @@
+Header header
+float32 current_angle_left
+float32 current_angle_right
+float32 command_angle
+float32 torque_left
+float32 torque_right

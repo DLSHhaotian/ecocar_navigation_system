@@ -1,0 +1,15 @@
+<resources>
+	<string name="app_name">Dynamo Remote</string>
+
+	<string name="title_activity_control">ControlActivity</string>
+	<string name="dummy_button">Dummy Button</string>
+	<string name="dummy_content">DUMMY\nCONTENT</string>
+	<string name="title_activity_maps">Map</string>
+	<string name="title_activity_maps2">Map</string>
+	<string name="brake">Brake</string>
+	<string name="burn">Burn</string>
+	<string name="zero_percent">0%</string>
+	<string name="km_h">km/h</string>
+	<string name="horn">Horn</string>
+	<string name="status">Status</string>
+</resources>

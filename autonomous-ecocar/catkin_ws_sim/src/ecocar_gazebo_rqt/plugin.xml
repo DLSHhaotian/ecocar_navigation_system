@@ -1,0 +1,12 @@
+<library path="src">
+  <class name="EcocarSimControl" type="ecocar_gazebo_rqt.ecocar_sim_control.EcocarSimControl" base_class_type="rqt_gui_py::Plugin">
+    <description>
+      A plugin for control of the Gazebo simulation of the autonomous ecocar Dynamo.
+    </description>
+    <qtgui>
+      <label>EcocarSimControl</label>
+      <icon type="theme">system-help</icon>
+      <statustip>User interface for the Ecocar Gazebo simulation.</statustip>
+    </qtgui>
+  </class>
+</library>

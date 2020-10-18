@@ -1,0 +1,265 @@
+<?xml version="1.0"?>
+<robot>
+
+  <!-- Ecocar plugin -->
+  <gazebo>
+    <plugin name="EcocarPlugin" filename="libEcocarPlugin.so">
+      <steering_p_gain>6000</steering_p_gain>
+      <steering_i_gain>0</steering_i_gain> <!-- PID parameters selected arbitrarily -->
+      <steering_d_gain>100</steering_d_gain>
+      <steering_max_force>5000</steering_max_force>
+      <max_brake_pressure>15</max_brake_pressure>
+      <gravity>9.8</gravity>
+      <rho_air>1.15</rho_air>
+    </plugin>
+  </gazebo>
+
+<!-- Publishes joint states -->
+  <gazebo>
+    <plugin name="joint_state_publisher" filename="libgazebo_ros_joint_state_publisher.so">
+      <robotNamespace>/</robotNamespace>
+      <jointName>base_to_wheel_rear_left, base_to_wheel_rear_right, front_left_steer_joint, front_right_steer_joint, front_left_wheel_joint, front_right_wheel_joint</jointName>
+      <updateRate>100.0</updateRate>
+     <alwaysOn>true</alwaysOn>
+   </plugin>
+ </gazebo>
+
+
+
+  <gazebo reference="base_link">
+    <material>Gazebo/Red</material>
+  </gazebo>
+
+
+  <!-- Rear left wheel -->
+  <!-- These mu's doesn't seem to make any difference? -->
+  <gazebo reference="rear_left_wheel">
+    <material>Gazebo/Black</material>
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <minDepth>0.005</minDepth>
+    <kp>1e8</kp>
+  </gazebo>
+
+  <!-- Rear right wheel -->
+  <gazebo reference="rear_right_wheel">
+    <material>Gazebo/Black</material>
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <minDepth>0.005</minDepth>
+    <kp>1e8</kp>
+  </gazebo>
+
+  <!-- Front left axle -->
+  <gazebo reference="front_left_axle">
+
+  </gazebo>
+
+  <!-- Front right axle -->
+  <gazebo reference="front_right_axle">
+
+  </gazebo>
+
+  <!-- Front left wheel -->
+  <gazebo reference="front_left_wheel">
+    <material>Gazebo/Black</material>
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <minDepth>0.005</minDepth>
+    <kp>1e8</kp>
+  </gazebo>
+
+  <!-- Front right wheel -->
+  <gazebo reference="front_right_wheel">
+    <material>Gazebo/Black</material>
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+    <minDepth>0.005</minDepth>
+    <kp>1e8</kp>
+  </gazebo>
+
+  <!-- Gyroscope, adjust parameters -->
+  <gazebo>
+    <plugin name="imu_plugin" filename="libgazebo_ros_imu.so">
+      <alwaysOn>true</alwaysOn>
+      <bodyName>base_link</bodyName>
+      <frameName>base_link</frameName>
+      <topicName>/sim/raw/imu</topicName>
+      <serviceName>imu_service</serviceName>
+      <gaussianNoise>1.7e-2</gaussianNoise>
+      <updateRate>100.0</updateRate>
+    </plugin>
+  </gazebo>
+
+  <!-- Camera. Adjust parameters -->
+    <gazebo reference="camera_link">
+      <sensor type="camera" name="camera_sensor">
+        <update_rate>30.0</update_rate>
+        <camera name="camera">
+          <horizontal_fov>1.3089969</horizontal_fov>
+          <image>
+            <width>800</width>
+            <height>600</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.02</near>
+            <far>300</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.007</stddev>
+          </noise>
+        </camera>
+        <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+          <alwaysOn>false</alwaysOn>
+          <updateRate>0.0</updateRate>
+          <cameraName>/sim/raw/camera</cameraName>
+          <imageTopicName>image_raw</imageTopicName>
+          <cameraInfoTopicName>/sim/raw/camera_info</cameraInfoTopicName>
+          <frameName>camera_link</frameName>
+          <hackBaseline>0.07</hackBaseline>
+          <distortionK1>0.0</distortionK1>
+          <distortionK2>0.0</distortionK2>
+          <distortionK3>0.0</distortionK3>
+          <distortionT1>0.0</distortionT1>
+          <distortionT2>0.0</distortionT2>
+        </plugin>
+      </sensor>
+  </gazebo>
+
+  <!-- Sonar, front -->
+  <gazebo reference="front_sonar_link">
+    <sensor name='front_sonar' type='ray'>
+      <!-- Use laser plugin right now, sonar does not work
+      <sonar>
+        <min>0</min>
+        <max>7.65</max>
+        <radius>0.3</radius>
+      </sonar>
+      <plugin name='sonar' filename='libgazebo_ros_sonar.so'>
+        <gaussianNoise>0.005</gaussianNoise>
+        <topicName>sonar_scan</topicName>
+        <frameName>front_sonar_link</frameName>
+        <fov>0.3</fov>
+      </plugin>
+      -->
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>1</samples>
+            <resolution>1</resolution>
+            <min_angle>0</min_angle>
+            <max_angle>0</max_angle>
+          </horizontal>
+          <vertical>
+            <samples>1</samples>
+            <min_angle>0</min_angle>
+            <max_angle>0</max_angle>
+          </vertical>
+        </scan>
+        <range>
+          <min>0.2</min>
+          <max>7.65</max>
+          <resolution>0.01</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.694e-5</stddev>
+        </noise>
+      </ray>
+      <plugin name='front_laser' filename='libgazebo_ros_laser.so'>
+        <topicName>/sim/raw/front_sonar</topicName>
+        <frameName>front_sonar_link</frameName>
+      </plugin>
+
+      <always_on>1</always_on>
+      <update_rate>6.667</update_rate>
+    </sensor>
+  </gazebo>
+
+  <!-- LiDAR Lite, Left -->
+  <!-- Set parameters -->
+  <!-- Not used for now
+  <gazebo reference="left_laser_link">
+      <sensor name='left_laser_sensor' type='ray'>
+        <ray>
+          <scan>
+            <horizontal>
+              <samples>1</samples>
+              <resolution>1</resolution>
+              <min_angle>0</min_angle>
+              <max_angle>0</max_angle>
+            </horizontal>
+            <vertical>
+              <samples>1</samples>
+              <min_angle>0</min_angle>
+              <max_angle>0</max_angle>
+            </vertical>
+          </scan>
+          <range>
+            <min>0.2</min>
+            <max>30</max>
+            <resolution>0.01</resolution>
+          </range>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.694e-5</stddev>
+          </noise>
+        </ray>
+        <plugin name='left_laser' filename='libgazebo_ros_laser.so'>
+          <topicName>/sim/raw/left_lidar</topicName>
+          <frameName>left_laser_link</frameName>
+        </plugin>
+        <always_on>1</always_on>
+        <update_rate>100</update_rate>
+        <visualize>0</visualize>
+      </sensor>
+  </gazebo>
+  -->
+
+  <!-- LiDAR Lite, Right -->
+  <!-- Set parameters -->
+  <!-- Not used for now
+  <gazebo reference="right_laser_link">
+      <sensor name='right_laser_sensor' type='ray'>
+        <ray>
+          <scan>
+            <horizontal>
+              <samples>1</samples>
+              <resolution>1</resolution>
+              <min_angle>0</min_angle>
+              <max_angle>0</max_angle>
+            </horizontal>
+            <vertical>
+              <samples>1</samples>
+              <min_angle>0</min_angle>
+              <max_angle>0</max_angle>
+            </vertical>
+          </scan>
+          <range>
+            <min>0.2</min>
+            <max>30</max>
+            <resolution>0.01</resolution>
+          </range>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.694e-5</stddev>
+          </noise>
+        </ray>
+        <plugin name='right_laser' filename='libgazebo_ros_laser.so'>
+          <topicName>/sim/raw/right_lidar</topicName>
+          <frameName>right_laser_link</frameName>
+        </plugin>
+        <always_on>1</always_on>
+        <update_rate>100</update_rate>
+        <visualize>0</visualize>
+      </sensor>
+  </gazebo>
+  -->
+
+</robot>

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Touchscreen Calibration
+Comment=This starts the xinput calibrator
+Exec=/home/dynamo/Scripts/launch_touchscreen_calibration.sh
+Terminal=true
+Type=Application

@@ -1,0 +1,1 @@
+bool master_switch

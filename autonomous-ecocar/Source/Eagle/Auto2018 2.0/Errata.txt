@@ -1,0 +1,1 @@
+- Silkscreen: ADC8 and ADC 9 are interchanged on BRK-M-ENC (Bottom)

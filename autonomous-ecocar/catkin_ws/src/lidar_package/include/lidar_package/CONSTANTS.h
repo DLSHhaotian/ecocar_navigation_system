@@ -1,0 +1,6 @@
+#pragma once
+
+#define PI 3.14159265358979
+#define PI_2 PI*2
+#define DEGREES_TO_RADIANS PI/180.0
+#define RADIANS_TO_DEGREES 180.0/PI

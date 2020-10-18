@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/dynamo/Source/Linux/SerialTest/main.cpp
+iostream
+-
+stdio.h
+-
+string.h
+-
+math.h
+-
+unistd.h
+-
+cstdlib
+-
+libserialport.h
+-
+
+/usr/local/include/libserialport.h
+stddef.h
+-
+

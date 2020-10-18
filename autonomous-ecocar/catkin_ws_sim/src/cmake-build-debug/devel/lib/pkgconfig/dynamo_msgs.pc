@@ -1,0 +1,8 @@
+prefix=/home/dlsh/gazebo/autonomous-ecocar/catkin_ws_sim/src/cmake-build-debug/devel
+
+Name: dynamo_msgs
+Description: Description of dynamo_msgs
+Version: 0.0.0
+Cflags: -I/home/dlsh/gazebo/autonomous-ecocar/catkin_ws_sim/src/cmake-build-debug/devel/include
+Libs: -L${prefix}/lib 
+Requires: message_runtime std_msgs

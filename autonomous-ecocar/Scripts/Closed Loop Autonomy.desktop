@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Closed Loop Autonomy
+Comment=This starts all required nodes for closed loop autonomy
+Exec=bash -ic /home/dynamo/Scripts/launch_closed_loop_autonomy.sh
+Icon=/home/dynamo/Source/Documentation/Repository Icon.png
+Terminal=true
+TerminalOptions=bash
+Type=Application
+Name[en_US]=Closed Loop Autonomy

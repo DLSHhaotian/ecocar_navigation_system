@@ -1,0 +1,36 @@
+-- Getting Gazebo simulations to run --
+0. Install Ubuntu 18.04 or derivative of it
+1. Install ROS Melodic Morenia and Gazebo9
+2. Make sure you have the "ros-melodic-gazebo-ros-pkgs" package
+3. Build the packages in the workspace
+4. Start simulation by running "./sim.sh"
+
+Step by step commands:
+
+```
+# Add ROS repository
+sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
+
+# With this mirror we get newest Gazebo 9.x instead of 9.0.
+sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'
+wget http://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
+
+# Install ROS and Gazebo
+sudo apt-get update
+sudo apt-get install -y ros-melodic-desktop-full gazebo9 ros-melodic-gazebo-ros-pkgs ros-melodic-rqt-multiplot ros-melodic-velodyne-simulator
+sudo apt-get upgrade libignition-math2
+
+source /opt/ros/melodic/setup.bash
+
+# Clone the repository
+git clone https://bitbucket.org/dtucar/autonomous-ecocar.git
+
+# Compile the code
+cd autonomous-ecocar/catkin_ws_sim/
+catkin_make
+
+# Start the simulation script
+# It starts rqt with the simulation plugin
+./sim.sh
+```

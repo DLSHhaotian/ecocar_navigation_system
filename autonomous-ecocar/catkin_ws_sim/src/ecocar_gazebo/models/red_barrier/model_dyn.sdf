@@ -1,0 +1,41 @@
+<?xml version='1.0'?>
+<sdf version="1.5">
+  <model name="Tecpro Karting Barrier (red)">
+    <pose>0 0 0 0 0 0</pose> 
+    <link name="link">
+      <inertial>
+        <pose>0.370960 0.295000 0.600000 0 0 0</pose><!-- center of mass from meshlab -->
+        <mass>45</mass>
+        <inertia> <!-- calculated in meshlab -->
+          <ixx>6.705389599</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>11.04078121</iyy>
+          <iyz>0.0</iyz>
+          <izz>6.946127121</izz>
+        </inertia>
+      </inertial>
+      <collision name="collision">
+        <pose>0.295 0.295 0.6 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>1.205 0.590 1.2</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <mesh>
+            <uri>model://red_barrier/meshes/barrier.stl</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>1 0 0 1</ambient>
+          <diffuse>1 0 0 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+          <emissive>0 0 0 0</emissive>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>

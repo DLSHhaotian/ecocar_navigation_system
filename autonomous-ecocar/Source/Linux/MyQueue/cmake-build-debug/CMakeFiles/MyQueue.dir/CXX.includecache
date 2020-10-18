@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/dynamo/Source/Linux/MyQueue/my_queue.cpp
+iostream
+-
+stdexcept
+-
+my_queue.h
+/home/dynamo/Source/Linux/MyQueue/my_queue.h
+
+/home/dynamo/Source/Linux/MyQueue/my_queue.h
+

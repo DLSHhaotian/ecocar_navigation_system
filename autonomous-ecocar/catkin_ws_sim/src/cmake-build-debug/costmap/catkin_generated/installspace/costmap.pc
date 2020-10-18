@@ -1,0 +1,8 @@
+prefix=/usr/local
+
+Name: costmap
+Description: Description of costmap
+Version: 0.0.0
+Cflags: -I${prefix}/include -I/usr/include
+Libs: -L${prefix}/lib -lcostmap -llayers /usr/lib/x86_64-linux-gnu/libboost_system.so /usr/lib/x86_64-linux-gnu/libboost_thread.so /usr/lib/x86_64-linux-gnu/libboost_chrono.so /usr/lib/x86_64-linux-gnu/libboost_date_time.so /usr/lib/x86_64-linux-gnu/libboost_atomic.so /usr/lib/x86_64-linux-gnu/libpthread.so
+Requires: geometry_msgs nav_msgs pluginlib roscpp sensor_msgs std_msgs tf2 tf2_geometry_msgs tf2_ros visualization_msgs

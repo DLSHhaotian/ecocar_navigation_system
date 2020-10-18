@@ -1,0 +1,8 @@
+prefix=/home/dlsh/gazebo/autonomous-ecocar/catkin_ws_sim/src/cmake-build-debug/devel
+
+Name: lidar_package
+Description: Description of lidar_package
+Version: 0.0.0
+Cflags: -I/home/dlsh/gazebo/autonomous-ecocar/catkin_ws_sim/src/cmake-build-debug/devel/include -I/home/dlsh/gazebo/autonomous-ecocar/catkin_ws_sim/src/lidar_package/include
+Libs: -L${prefix}/lib -llidar_package
+Requires: message_runtime roscpp std_msgs velodyne_msgs

@@ -1,0 +1,3 @@
+/home/dynamo/Source/Linux/SerialTest/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/dynamo/Source/Linux/SerialTest/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/dynamo/Source/Linux/SerialTest/cmake-build-debug/CMakeFiles/SerialTest.dir

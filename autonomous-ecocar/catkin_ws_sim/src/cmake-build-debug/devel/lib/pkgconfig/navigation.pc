@@ -1,0 +1,8 @@
+prefix=/home/dlsh/gazebo/autonomous-ecocar/catkin_ws_sim/src/cmake-build-debug/devel
+
+Name: navigation
+Description: Description of navigation
+Version: 0.0.0
+Cflags: -I/home/dlsh/gazebo/autonomous-ecocar/catkin_ws_sim/src/navigation/include
+Libs: -L${prefix}/lib 
+Requires: roscpp std_msgs std_srvs message_runtime dynamo_msgs tf2_ros tf2 geometry_msgs
