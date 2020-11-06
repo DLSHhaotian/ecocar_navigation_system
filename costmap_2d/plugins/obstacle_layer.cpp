@@ -357,7 +357,7 @@ void ObstacleLayer::updateBounds(double robot_x, double robot_y, double robot_ya
   for (unsigned int i = 0; i < clearing_observations.size(); ++i)
   {
     raytraceFreespace(clearing_observations[i], min_x, min_y, max_x, max_y);
-    ROS_INFO("obstacle raytraced");
+    //ROS_INFO("obstacle raytraced");
   }
 
   // place the new obstacles into a priority queue... each with a priority of zero to begin with
@@ -582,7 +582,8 @@ void ObstacleLayer::raytraceFreespace(const Observation& clearing_observation, d
       continue;
 
     unsigned int cell_raytrace_range = cellDistance(clearing_observation.raytrace_range_);
-    MarkCell marker(costmap_, INSCRIBED_INFLATED_OBSTACLE);//changed for Probability map
+    //MarkCell marker(costmap_, INSCRIBED_INFLATED_OBSTACLE);//changed for Probability map
+    MarkCell marker(costmap_, FREE_SPACE);
     // and finally... we can execute our trace to clear obstacles along that line
     raytraceLine(marker, x0, y0, x1, y1, cell_raytrace_range);
 

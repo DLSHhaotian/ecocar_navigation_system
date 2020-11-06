@@ -494,7 +494,7 @@ void Costmap2DROS::updateMap()
              yaw = tf2::getYaw(pose.pose.orientation);
 
       layered_costmap_->updateMap(x, y, yaw);
-      ROS_INFO("Map updated");
+      //ROS_INFO("Map updated");
       geometry_msgs::PolygonStamped footprint;
       footprint.header.frame_id = global_frame_;
       footprint.header.stamp = ros::Time::now();
@@ -625,7 +625,7 @@ void Costmap2DROS::getOrientedFootprint(std::vector<geometry_msgs::Point>& orien
 void Costmap2DROS::mapSizeCarPoseCallback(const std_msgs::Float32MultiArray::ConstPtr &msg_carPoseEstimate)
 {
   double carpose_theta=msg_carPoseEstimate->data[3];
-  ROS_INFO("map size check callback in");
+  //ROS_INFO("map size check callback in");
   double map_width=10.0, map_height=10.0;
   //two sets of map size
   double map_meter_width1=22.0;

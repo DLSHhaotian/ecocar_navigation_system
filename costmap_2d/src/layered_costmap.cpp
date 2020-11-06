@@ -149,6 +149,7 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
        ++plugin)
   {
     (*plugin)->updateCosts(costmap_, x0, y0, xn, yn);
+    ROS_INFO("updateCost finished");
   }
 
   bx0_ = x0;
