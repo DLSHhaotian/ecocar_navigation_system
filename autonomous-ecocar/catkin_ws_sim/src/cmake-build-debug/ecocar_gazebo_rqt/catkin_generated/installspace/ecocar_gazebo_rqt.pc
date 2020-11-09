@@ -1,8 +1,0 @@
-prefix=/usr/local
-
-Name: ecocar_gazebo_rqt
-Description: Description of ecocar_gazebo_rqt
-Version: 0.1.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: 

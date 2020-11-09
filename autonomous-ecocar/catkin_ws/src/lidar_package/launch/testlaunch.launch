@@ -1,4 +1,0 @@
-<launch>
-    <node pkg="lidar_package" type="gate_classifier" name="test_gate_classifier_name"/>
-    <node pkg="lidar_package" type="vlp16_obst_detection" name="test_vlp16_obst_detection_name"/>
-</launch>

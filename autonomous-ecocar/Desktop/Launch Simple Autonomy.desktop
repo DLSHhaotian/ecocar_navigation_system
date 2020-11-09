@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name=Simple Autonomy
-Comment=This starts all required nodes for simple autonomy
-Exec= bash -ic /home/dynamo/Scripts/launch_simple_autonomy.sh
-Icon=/home/dynamo/Source/Documentation/Repository Icon.png
-Terminal=true
-TerminalOptions=bash
-Type=Application

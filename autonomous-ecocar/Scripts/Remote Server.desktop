@@ -1,7 +1,0 @@
-[Desktop Entry]
-Name=Remote Server
-Comment=This starts the remote server
-Exec=/home/dynamo/Source/Linux/RemoteServer/launch_remote_server.sh
-Icon=/home/dynamo/Source/Linux/RemoteServer/remote_icon.png
-Terminal=true
-Type=Application

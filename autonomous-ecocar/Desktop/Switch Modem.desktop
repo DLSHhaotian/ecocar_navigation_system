@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name=Switch Modem
-Comment=This switches the modem
-Exec= bash -ic /home/dynamo/Scripts/switch_modem_mode.sh
-Icon=/home/dynamo/Source/Documentation/Repository Icon.png
-Terminal=true
-TerminalOptions=bash
-Type=Application

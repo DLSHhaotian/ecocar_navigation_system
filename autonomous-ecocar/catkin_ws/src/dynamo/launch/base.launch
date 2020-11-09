@@ -1,5 +1,0 @@
-<launch>
-  <node name="teensy_node" pkg="teensy" type="teensy_node" />
-  <!--<node name="dynamo_helper_node" pkg="dynamo_helper" type="dynamo_helper_node" />-->
-  
-</launch>

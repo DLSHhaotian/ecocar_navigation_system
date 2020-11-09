@@ -1,9 +1,0 @@
-[Desktop Entry]
-Name=Logging Mode
-Comment=This starts all sensor nodes and logs all their topics to a rosbag file
-Exec=bash -ic /home/dynamo/Scripts/launch_test_drive.sh
-Icon=/home/dynamo/Source/Documentation/Repository Icon.png
-Terminal=true
-TerminalOptions=bash
-Type=Application
-Name[en_US]=Test AUT Drive

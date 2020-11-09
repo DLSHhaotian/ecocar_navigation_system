@@ -1,8 +1,0 @@
-prefix=/usr/local
-
-Name: ecocar_demo
-Description: Description of ecocar_demo
-Version: 0.0.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: roscpp message_runtime ecocar_gazebo_msgs std_msgs dynamo_msgs sensor_msgs

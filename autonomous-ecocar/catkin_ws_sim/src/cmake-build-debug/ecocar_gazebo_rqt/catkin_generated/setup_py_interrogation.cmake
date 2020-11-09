@@ -1,7 +1,0 @@
-set(ecocar_gazebo_rqt_SETUP_PY_SETUP_MODULE "distutils.core")
-set(ecocar_gazebo_rqt_SETUP_PY_VERSION "0.1.0")
-set(ecocar_gazebo_rqt_SETUP_PY_SCRIPTS "")
-set(ecocar_gazebo_rqt_SETUP_PY_PACKAGES "ecocar_gazebo_rqt")
-set(ecocar_gazebo_rqt_SETUP_PY_PACKAGE_DIRS "src/ecocar_gazebo_rqt")
-set(ecocar_gazebo_rqt_SETUP_PY_MODULES "")
-set(ecocar_gazebo_rqt_SETUP_PY_MODULE_DIRS "")

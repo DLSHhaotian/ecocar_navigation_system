@@ -1,7 +1,0 @@
-Windows (Replace Henning with your username):
-mklink /J "C:\Users\Henning\Documents\Arduino\libraries\LIDAR-Lite_v3" "C:\Users\Henning\Source\AutonomousEcocar\Source\Teensy\Libraries\LIDAR-Lite_v3"
-mklink /J "C:\Users\Henning\Documents\Arduino\libraries\MPU9250" "C:\Users\Henning\Source\AutonomousEcocar\Source\Teensy\Libraries\MPU9250"
-
-
-OSX/Linux:
-ln -s /Users/username/ecocar/code/desiredLib /Users/Eske/documents/arduino/libraries

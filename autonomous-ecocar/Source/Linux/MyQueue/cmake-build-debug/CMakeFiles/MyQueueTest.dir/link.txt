@@ -1,1 +1,0 @@
-/usr/bin/c++   -g   CMakeFiles/MyQueueTest.dir/test.cpp.o  -o MyQueueTest libMyQueue.a 

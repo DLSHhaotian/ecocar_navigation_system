@@ -1,9 +1,0 @@
-<launch>
-    <node name="dynamo_helper_node" type="dynamo_helper_node" pkg="dynamo_helper" respawn="true" />
-    <node name="teensy_node" type="teensy_node" pkg="teensy" respawn="true" />
-    <node name="remote_node" type="remote_node" pkg="remote" respawn="true" />
-    <node name="piksi_node" type="piksi_node" pkg="piksi" respawn="true" />
-    <node name="phidget_node" type="phidget_node" pkg="phidget" respawn="true" />
-    <node name="sf40_node" type="sf40_node" pkg="lightware_sf40_ros" respawn="true" />
-    <node name="gyro_node" type="gyro_node" pkg="gyro" respawn="true" />
-</launch>
