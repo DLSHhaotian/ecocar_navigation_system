@@ -1,6 +1,6 @@
 global_frame: world
 robot_base_frame: odom
-update_frequency: 15.0
+update_frequency: 20.0
 publish_frequency: 5.0
 
 #set if you want the voxel map published

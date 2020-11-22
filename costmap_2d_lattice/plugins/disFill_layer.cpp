@@ -21,7 +21,7 @@ namespace costmap_2d
 
 disFillLayer::disFillLayer()
   : resolution_(0)
-  , gridValue_max(128)
+  , gridValue_max(250)
   , dsrv_(NULL)
   , last_min_x_(-std::numeric_limits<float>::max())
   , last_min_y_(-std::numeric_limits<float>::max())
@@ -129,9 +129,9 @@ ROS_INFO("START FILL");
   const int obs_num_col_noise=6;
   std::vector<unsigned int> x_list_col;//for pattern1
   for(auto i_key=obsCell_rotate.begin();i_key!=obsCell_rotate.end();i_key=obsCell_rotate.upper_bound(i_key->first)){
-      ROS_INFO("%d",obsCell_rotate.count(i_key->first));
+      //ROS_INFO("%d",obsCell_rotate.count(i_key->first));
         if(obsCell_rotate.count(i_key->first)>obs_num_col_road&&(i_key->first<size_y/3||i_key->second>size_y*2/3)){
-            ROS_INFO("FOUND COL TO FILL");
+            //ROS_INFO("FOUND COL TO FILL");
             std::pair<std::multimap<unsigned int,unsigned int>::iterator, std::multimap<unsigned int,unsigned int>::iterator> i_value = obsCell_rotate.equal_range(i_key->first);
             for (auto i = i_value.first; i != i_value.second; ++i)
             {
@@ -139,12 +139,12 @@ ROS_INFO("START FILL");
             }
             int max_x=*(std::max_element(x_list_col.begin(),x_list_col.end()));
             int min_x=*(std::min_element(x_list_col.begin(),x_list_col.end()));
-            ROS_INFO("max: %d, min: %d",max_x,min_x);
+            //ROS_INFO("max: %d, min: %d",max_x,min_x);
             for(int i=min_x;i<=max_x;++i){
                 if(std::find(x_list_col.begin(),x_list_col.end(),i)==x_list_col.end()){
                     obsCell.insert(std::make_pair(i,i_key->first));//put the filled obstacle point into obscell
                     master_array[i_key->first * size_x + i]=LETHAL_OBSTACLE;
-                    ROS_INFO("FILL IN");
+                    //ROS_INFO("FILL IN");
                 }
             }
             x_list_col.clear();
@@ -169,7 +169,7 @@ ROS_INFO("START FILL");
           x_free=index->x_;
           y_free=index->y_;
           if(obsCell.count(y_free)!=0){
-              ROS_INFO("just row");
+              //ROS_INFO("just row");
               iter=obsCell.find(y_free);
               for(int k=0;k<obsCell.count(y_free);++k,++iter){//unsigned and signed, it is important
                   if(master_array[y_free * size_x + x_free]<(gridValue_max /(abs(static_cast<int>(x_free - iter->second))+1))){
@@ -179,7 +179,7 @@ ROS_INFO("START FILL");
           }
           else{//there is no obstacle in this row,but perhaps exits in the neighbour rows
               if(obsCell.count(y_free+1)!=0){
-                  ROS_INFO("just row+1");
+                  //ROS_INFO("just row+1");
                   iter=obsCell.find(y_free+1);
                   //master_array[y_free * size_x + x_free]=gridValue_max / abs(static_cast<int>(x_free - iter->second));
                   for(int k=0;k<obsCell.count(y_free+1);++k,++iter){
@@ -190,7 +190,7 @@ ROS_INFO("START FILL");
               }
               else{
                   if(obsCell.count(y_free-1)!=0){
-                      ROS_INFO("just row-1");
+                      //ROS_INFO("just row-1");
                       iter=obsCell.find(y_free-1);
                       //master_array[y_free * size_x + x_free]=gridValue_max / abs(static_cast<int>(x_free - iter->second));
                       for(int k=0;k<obsCell.count(y_free-1);++k,++iter){
