@@ -50,6 +50,7 @@
 #include <pluginlib/class_loader.hpp>
 #include <tf2/LinearMath/Transform.h>
 #include "std_msgs/Float32MultiArray.h"
+#include "std_msgs/Int8.h"
 class SuperValue : public XmlRpc::XmlRpcValue
 {
 public:
@@ -116,7 +117,12 @@ public:
     {
       return layered_costmap_->isCurrent();
     }
-
+  //DLSH ADDED
+  bool isInitialized() const
+  {
+      return initialized_;
+  }
+  //DLSH ADDED
   /**
    * @brief Is the costmap stopped
    */
@@ -235,6 +241,7 @@ public:
    * getUnpaddedRobotFootprint(). */
   void setUnpaddedRobotFootprintPolygon(const geometry_msgs::Polygon& footprint);
   void mapSizeCarPoseCallback(const std_msgs::Float32MultiArray::ConstPtr &msg_carPoseEstimate);
+  void mapSwitchCallback(const std_msgs::Int8::ConstPtr &msg);
 protected:
   LayeredCostmap* layered_costmap_;
   std::string name_;
@@ -273,11 +280,15 @@ private:
 
   ros::Subscriber footprint_sub_;
   ros::Subscriber carPose_sub_;
+  ros::Subscriber mapSwitch_sub_;
   ros::Publisher footprint_pub_;
   std::vector<geometry_msgs::Point> unpadded_footprint_;
   std::vector<geometry_msgs::Point> padded_footprint_;
   float footprint_padding_;
   costmap_2d::Costmap2DConfig old_config_;
+
+  double car_dist,car_dist_switch;
+  int map_switch;
 };
 // class Costmap2DROS
 }  // namespace costmap_2d

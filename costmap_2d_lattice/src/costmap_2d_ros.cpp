@@ -76,7 +76,10 @@ Costmap2DROS::Costmap2DROS(const std::string& name, tf2_ros::Buffer& tf) :
     plugin_loader_("costmap_2d", "costmap_2d::Layer"),
     publisher_(NULL),
     dsrv_(NULL),
-    footprint_padding_(0.0)
+    footprint_padding_(0.0),
+    car_dist(0.0),
+    car_dist_switch(0.0),
+    map_switch(0)
 {
   // Initialize old pose with something
   tf2::toMsg(tf2::Transform::getIdentity(), old_pose_.pose);
@@ -168,6 +171,8 @@ ROS_INFO("plugins initialized");
   stopped_ = false;
   //car_pose_publish
   carPose_sub_=g_nh.subscribe("/car_pose_estimate", 10, &Costmap2DROS::mapSizeCarPoseCallback, this);
+  // map switch sub
+  mapSwitch_sub_=g_nh.subscribe("/map_switch", 10, &Costmap2DROS::mapSwitchCallback, this);
   // Create a time r to check if the robot is moving
   robot_stopped_ = false;
   timer_ = private_nh.createTimer(ros::Duration(.1), &Costmap2DROS::movementCB, this);
@@ -344,7 +349,7 @@ void Costmap2DROS::reconfigureCB(costmap_2d::Costmap2DConfig &config, uint32_t l
 
   if (!layered_costmap_->isSizeLocked())
   {
-    layered_costmap_->resizeMap((unsigned int)(map_width_meters / resolution),
+      layered_costmap_->resizeMap((unsigned int)(map_width_meters / resolution),
                                 (unsigned int)(map_height_meters / resolution), resolution, origin_x, origin_y);
   }
 
@@ -359,7 +364,7 @@ void Costmap2DROS::reconfigureCB(costmap_2d::Costmap2DConfig &config, uint32_t l
   readFootprintFromConfig(config, old_config_);
 
   old_config_ = config;
-
+  ROS_INFO("map_update_frequency: %f",map_update_frequency);
   map_update_thread_ = new boost::thread(boost::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency));
 }
 
@@ -449,7 +454,7 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
     double start_t, end_t, t_diff;
     gettimeofday(&start, NULL);
     #endif
-    
+    initialized_=false;
     updateMap();
 
     #ifdef HAVE_SYS_TIME_H
@@ -624,36 +629,33 @@ void Costmap2DROS::getOrientedFootprint(std::vector<geometry_msgs::Point>& orien
 }
 void Costmap2DROS::mapSizeCarPoseCallback(const std_msgs::Float32MultiArray::ConstPtr &msg_carPoseEstimate)
 {
-  double carpose_theta=msg_carPoseEstimate->data[3];
-  //ROS_INFO("map size check callback in");
-  double map_width=10.0, map_height=10.0;
+  car_dist=msg_carPoseEstimate->data[6];
+  double threshold=10;
+  double map_width=22.0, map_height=16.0;
   //two sets of map size
   double map_meter_width1=22.0;
-  double  map_meter_height1=10.0;
-  double map_meter_width2=10.0;
+  double  map_meter_height1=16.0;
+  double map_meter_width2=16.0;
   double  map_meter_height2=22.0;
-   //limit the theta into [-3.14 3.14)
-    while(carpose_theta<-3.14){
-        carpose_theta=carpose_theta+6.28;
-    }
-  while(carpose_theta>=3.14){
-    carpose_theta=carpose_theta-6.28;
-  }
-  if((carpose_theta>=-0.785&&carpose_theta<=0.785)||(carpose_theta<=-2.355)||(carpose_theta>=2.355)){
-    if(layered_costmap_->getCostmap()->getSizeInMetersX()==map_meter_width1){
-      ROS_INFO("map size pattern1");
-      return;
-    }
-    map_width=map_meter_width1;
-    map_height=map_meter_height1;
+  //ROS_INFO("car_dist:###  %f",car_dist);
+  //ROS_INFO("car_dist_switch:###  %f",car_dist_switch);
+  if(map_switch==1&&(abs(car_dist-car_dist_switch)>threshold||car_dist_switch==0.0)){
+      ROS_INFO("MAP size width: #####  %f",layered_costmap_->getCostmap()->getSizeInMetersX());
+      if(layered_costmap_->getCostmap()->getSizeInMetersX()>(map_meter_width1-2)){
+        ROS_INFO("map size pattern1, change to pattern2");
+        map_width=map_meter_width2;
+        map_height=map_meter_height2;
+      }
+      else{
+          ROS_INFO("map size pattern2, change to pattern1");
+          map_width=map_meter_width1;
+          map_height=map_meter_height1;
+      }
+      car_dist_switch=car_dist;
   }
   else{
-     if(layered_costmap_->getCostmap()->getSizeInMetersX()==map_meter_width2){
-       ROS_INFO("map size pattern2");
+      //ROS_INFO("keep the size");
       return;
-    }
-    map_width=map_meter_width2;
-    map_height=map_meter_height2;
   }
 
   if (map_update_thread_ != NULL)
@@ -674,7 +676,69 @@ void Costmap2DROS::mapSizeCarPoseCallback(const std_msgs::Float32MultiArray::Con
     layered_costmap_->resizeMap((unsigned int)(map_width / resolution),
                                 (unsigned int)(map_height / resolution), resolution, origin_x, origin_y);
   }
+  //layered_costmap_->resizeMap((unsigned int)(map_width / resolution),(unsigned int)(map_height / resolution), resolution, origin_x, origin_y,true);
   double map_update_frequency=15.0;
   map_update_thread_ = new boost::thread(boost::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency));
 }
+void Costmap2DROS::mapSwitchCallback(const std_msgs::Int8::ConstPtr &msg){
+    ROS_INFO("MAP_SWITCH:###############  IS %d",map_switch);
+    map_switch=msg->data;
+}
+/*
+void Costmap2DROS::mapSizeCarPoseCallback(const std_msgs::Float32MultiArray::ConstPtr &msg_carPoseEstimate)
+{
+    double carpose_theta=msg_carPoseEstimate->data[3];
+    //ROS_INFO("map size check callback in");
+    double map_width=10.0, map_height=10.0;
+    //two sets of map size
+    double map_meter_width1=22.0;
+    double  map_meter_height1=16.0;
+    double map_meter_width2=16.0;
+    double  map_meter_height2=22.0;
+    //limit the theta into [-3.14 3.14)
+    while(carpose_theta<-3.14){
+        carpose_theta=carpose_theta+6.28;
+    }
+    while(carpose_theta>=3.14){
+        carpose_theta=carpose_theta-6.28;
+    }
+    if((carpose_theta>=-0.785&&carpose_theta<=0.785)||(carpose_theta<=-2.355)||(carpose_theta>=2.355)){
+        if(layered_costmap_->getCostmap()->getSizeInMetersX()==map_meter_width1){
+            ROS_INFO("map size pattern1");
+            return;
+        }
+        map_width=map_meter_width1;
+        map_height=map_meter_height1;
+    }
+    else{
+        if(layered_costmap_->getCostmap()->getSizeInMetersX()==map_meter_width2){
+            ROS_INFO("map size pattern2");
+            return;
+        }
+        map_width=map_meter_width2;
+        map_height=map_meter_height2;
+    }
+
+    if (map_update_thread_ != NULL)
+    {
+        map_update_thread_shutdown_ = true;
+        map_update_thread_->join();
+        delete map_update_thread_;
+    }
+    map_update_thread_shutdown_ = false;
+    // find size parameters
+    double resolution=layered_costmap_->getCostmap()->getResolution();
+    double origin_x=layered_costmap_->getCostmap()->getOriginX();
+    double origin_y=layered_costmap_->getCostmap()->getOriginY();
+
+
+    if (!layered_costmap_->isSizeLocked())
+    {
+        layered_costmap_->resizeMap((unsigned int)(map_width / resolution),
+                                    (unsigned int)(map_height / resolution), resolution, origin_x, origin_y);
+    }
+    //layered_costmap_->resizeMap((unsigned int)(map_width / resolution),(unsigned int)(map_height / resolution), resolution, origin_x, origin_y,true);
+    double map_update_frequency=15.0;
+    map_update_thread_ = new boost::thread(boost::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency));
+}*/
 }  // namespace costmap_2d

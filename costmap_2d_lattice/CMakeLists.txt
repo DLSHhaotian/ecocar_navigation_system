@@ -16,6 +16,7 @@ find_package(catkin REQUIRED
             sensor_msgs
             std_msgs
             dynamo_msgs
+            auto_navi
             tf2
             tf2_geometry_msgs
             tf2_ros
@@ -139,12 +140,16 @@ target_link_libraries(costmap_2d_node
     ${catkin_LIBRARIES}
 )
 add_executable(lattice_planner_node src/lattice_planner_node.cpp)
-add_dependencies(lattice_planner_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} dynamo_msgs_generate_messages_cpp)
+add_dependencies(lattice_planner_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} auto_navi_generate_messages_cpp dynamo_msgs_generate_messages_cpp)
 target_link_libraries(lattice_planner_node
         costmap_2d
         ${Boost_LIBRARIES}
         ${catkin_LIBRARIES}
         )
+
+add_executable(steering_publisher src/steering_publisher.cpp)
+target_link_libraries(steering_publisher ${catkin_LIBRARIES})
+add_dependencies(steering_publisher dynamo_msgs_generate_messages_cpp)
 
 ## Configure Tests
 if(CATKIN_ENABLE_TESTING)

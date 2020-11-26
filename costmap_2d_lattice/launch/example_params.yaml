@@ -12,7 +12,7 @@ static_map: false
 #begin - COMMENT these lines if you set static_map to true
 rolling_window: true
 width: 22.0
-height: 10.0
+height: 16.0
 resolution: 0.5
 #end - COMMENT these lines if you set static_map to true
 track_unknown_space: false

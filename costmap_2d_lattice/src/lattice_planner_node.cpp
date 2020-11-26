@@ -6,10 +6,18 @@
 #include <costmap_2d/costmap_2d_ros.h>
 #include <tf2_ros/transform_listener.h>
 #include "dynamo_msgs/TeensyRead.h"
+#include "auto_navi/motorMsg.h"
+#include "dynamo_msgs/SteeringStepper.h"
+#include "std_msgs/Int8.h"
 #include <visualization_msgs/Marker.h>
 #include <algorithm>
 #include <vector>
 #include <map>
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <cstdio>
 
 using namespace std;
 double theta_car,x_car,y_car,speed_car;
@@ -17,8 +25,8 @@ double steering_current;
 double s_current[4];//0:x,1:y,2:theta,3:v
 
 const double PI = 3.141592653589793238463;
-const double Ts = 0.1,T_final=2.0;
-const double L=1.516,max_deg_speed=5,max_rad_speed=5*PI/180,cof_engine=0.27;//cof_engine=0.27;
+const double Ts = 0.1,T_final=2.5;
+const double L=1.516,max_deg_speed=20,max_rad_speed=5*PI/180,cof_engine=0.27;//cof_engine=0.27;
 const double speed_switch=4.0,speed_toofast=5.0;
 const double A_front=0.8575,Cd=1.0,rho_air=1.15,m_car=130,m_all=200;
 
@@ -27,17 +35,25 @@ double u_angle_deg_use[13]={-15.0,-12.5,-10.0,-7.5,-5.0,-2.5,0.0,2.5,5.0,7.5,10.
 double u_angle_rad_use[13]={-0.261799,-0.218166,-0.17453,-0.130899,-0.087266,-0.043633,0.0,0.043633,0.087266,0.130899,0.17453,0.218166,0.261799};
 double u_engine_use[3]={0,1,2};
 double u_break_use[4]={0,5,10,15};
+int traj_history_id=10;
 
+const char* file="/home/dlsh/Ecocar_offline_path_optimization/result_analysis/mue=0.9/traj_opt.csv";
+vector<float> road_x,road_y;
+const double dis_find_global=8.0;//[m]
+double drive_dist=0.0;
 
 ros::Publisher pub_marker;
-
+ros::Publisher motoPub;
+ros::Publisher steerPub;
+ros::Publisher mapSwitch;
 void fill_steering_input_array(double* array,double len_t_list,double steering_goal);
 double** ode_model_predict(double* s0,double* t_list,int len_t_list,double* u_angle_list, double* u_engin_list,double* u_break_list);
-void traj_vis(double** s_10l,double** s_10r,double** s_7_5l,double** s_7_5r,double** s_5l,double** s_5r,double** s_2_5l,double** s_2_5r,double** s_0, double** s_min,int len_t_list);
+void traj_vis(double** s_10l,double** s_10r,double** s_7_5l,double** s_7_5r,double** s_5l,double** s_5r,double** s_2_5l,double** s_2_5r,double** s_0, double** s_min,int len_t_list, int index_global_goal);
 void delete_s_array(double** s_array,int len_t_list);
 void odomCallback(const std_msgs::Float32MultiArray::ConstPtr &msg_odom);
 void teensyCallback(const dynamo_msgs::TeensyReadPtr &msg);
-double score_traj(costmap_2d::Costmap2DROS& costmap_ros,double** s_array,int len_t_list);
+//double score_traj(costmap_2d::Costmap2D* map,double** s_array,int len_t_list);
+double score_traj(costmap_2d::Costmap2DROS& map,double** s_array,int len_t_list, int& index_global_goal);
 void lattice_planner(costmap_2d::Costmap2DROS& costmap_ros);
 
 
@@ -47,9 +63,11 @@ void odomCallback(const std_msgs::Float32MultiArray::ConstPtr &msg_odom) {
     // msg_odom[0]: x
     // msg_odom[1]: y
     // msg_odom[3]: theta [rad](orientation)
+    // msg_odom[6]: drive dist
     s_current[0] = msg_odom->data[0];
     s_current[1] = msg_odom->data[1];
     s_current[2] = msg_odom->data[3];
+    drive_dist = msg_odom->data[6];
 }
 void delete_s_array(double** s_array,int len_t_list){
     for(int i = 0; i < len_t_list; i++)
@@ -83,7 +101,7 @@ double** ode_model_predict(double* s0,double* t_list,int len_t_list,double* u_an
     //Apply for dynamic memory
     double **s_list = new double*[len_t_list];
     for(int i = 0; i < len_t_list; i++)
-        s_list[i] = new double[4];
+        s_list[i] = new double[5];
 
     //ode forward simulation
     for(int i=0;i<len_t_list;++i){
@@ -101,6 +119,7 @@ double** ode_model_predict(double* s0,double* t_list,int len_t_list,double* u_an
         s_list[i][1]=y;
         s_list[i][2]=theta;
         s_list[i][3]=v;
+        s_list[i][4]=u_angle;
     }
     return s_list;
 }
@@ -108,45 +127,50 @@ void teensyCallback(const dynamo_msgs::TeensyReadPtr &msg) {
     s_current[3] = msg->speed_wheel;
 }
 
-void traj_vis(double** s_10l,double** s_10r,double** s_7_5l,double** s_7_5r,double** s_5l,double** s_5r,double** s_2_5l,double** s_2_5r,double** s_0, double** s_min,int len_t_list) {
-    visualization_msgs::Marker traj, traj_min, points3, points_line,points_line2;
+void traj_vis(double** s_10l,double** s_10r,double** s_7_5l,double** s_7_5r,double** s_5l,double** s_5r,double** s_2_5l,double** s_2_5r,double** s_0, double** s_min,int len_t_list, int index_global_goal) {
+    visualization_msgs::Marker traj, traj_min, traj_used, traj_input,traj_global;
     ros::Duration one_sec(.4);
 
-    traj.header.frame_id = traj_min.header.frame_id = points3.header.frame_id =
-    points_line.header.frame_id = points_line2.header.frame_id =
+    traj.header.frame_id = traj_min.header.frame_id = traj_used.header.frame_id =
+    traj_input.header.frame_id = traj_global.header.frame_id =
             "world"; //"base_link";
-    traj.header.stamp = traj_min.header.stamp = points3.header.stamp =
-    points_line.header.stamp = points_line2.header.stamp = ros::Time::now();
+    traj.header.stamp = traj_min.header.stamp = traj_used.header.stamp =
+    traj_input.header.stamp = traj_global.header.stamp = ros::Time::now();
 
     // Set the namespace and id for this marker.  This serves to create a unique
     // ID
     // Any marker sent with the same namespace and id will overwrite the old one
     traj.ns = "points";
     traj_min.ns = "points_corrected";
-    points3.ns = "points_corrected_global";
-    points_line.ns = "points_line";
-    points_line2.ns = "points_line_debug";
+    traj_used.ns = "points_corrected_global";
+    traj_input.ns = "points_line";
+    traj_global.ns = "points_line_debug";
 
-    traj.action = traj_min.action = points3.action = points_line.action =
-    points_line2.action = visualization_msgs::Marker::ADD;
+    traj.action = traj_min.action = traj_used.action = traj_input.action =
+    traj_global.action = visualization_msgs::Marker::ADD;
 
     traj.pose.orientation.w = traj_min.pose.orientation.w =
-    points3.pose.orientation.w = points_line.pose.orientation.w =
-    points_line2.pose.orientation.w = 1.0;
+    traj_used.pose.orientation.w = traj_input.pose.orientation.w =
+    traj_global.pose.orientation.w = 1.0;
 
     traj.id = 0;
     traj_min.id = 1;
-    points3.id = 2;
-    points_line.id = 3;
-    points_line2.id = 4;
+    //traj_used.id = 2;
+    traj_input.id = traj_history_id+500;
+    traj_global.id = 4;
+    traj_used.id=traj_history_id;
+    ++traj_history_id;
 
+    //set the lifetime
+    traj_used.lifetime=ros::Duration(0.0);
+    traj_input.lifetime=ros::Duration(0.0);
     // Set the marker type.
 
     traj.type = visualization_msgs::Marker::POINTS;
     traj_min.type = visualization_msgs::Marker::POINTS;
-    points3.type = visualization_msgs::Marker::POINTS;
-    points_line.type = visualization_msgs::Marker::POINTS;
-    points_line2.type = visualization_msgs::Marker::POINTS;
+    traj_used.type = visualization_msgs::Marker::POINTS;
+    traj_input.type = visualization_msgs::Marker::POINTS;
+    traj_global.type = visualization_msgs::Marker::POINTS;
 
     // POINTS markers use x and y scale for width/height respectively
     traj.scale.x = 0.2;
@@ -155,14 +179,14 @@ void traj_vis(double** s_10l,double** s_10r,double** s_7_5l,double** s_7_5r,doub
     traj_min.scale.x = 0.2;
     traj_min.scale.y = 0.2;
 
-    points3.scale.x = 0.2;
-    points3.scale.y = 0.2;
+    traj_used.scale.x = 0.2;
+    traj_used.scale.y = 0.2;
 
-    points_line.scale.x = 0.2;
-    points_line.scale.y = 0.2;
+    traj_input.scale.x = 0.2;
+    traj_input.scale.y = 0.2;
 
-    points_line2.scale.x = 0.2;
-    points_line2.scale.y = 0.2;
+    traj_global.scale.x = 0.5;
+    traj_global.scale.y = 0.5;
 
     traj.color.b = 1.0; // blue
     traj.color.a = 1.0;
@@ -170,13 +194,14 @@ void traj_vis(double** s_10l,double** s_10r,double** s_7_5l,double** s_7_5r,doub
     traj_min.color.g = 1.0f; // green
     traj_min.color.a = 1.0;
 
-    points3.color.r = 1.0f; // red
-    points3.color.a = 1.0;
+    traj_used.color.r = 1.0f; // red
+    traj_used.color.a = 1.0;
 
-    points_line.color.a = 1.0;
+    traj_input.color.r = 0.5; //brown
+    traj_input.color.a = 1.0;
 
-    points_line2.color.r = 1.0f; // red
-    points_line2.color.a = 1.0;
+    traj_global.color.g = 0.5; // red
+    traj_global.color.a = 1.0;
 
     for (int i = 0; i < len_t_list; i++) {
         geometry_msgs::Point p_10l, p_10r, p_7_5l, p_7_5r, p_5l, p_5r,p_2_5l, p_2_5r, p_0;
@@ -224,14 +249,38 @@ void traj_vis(double** s_10l,double** s_10r,double** s_7_5l,double** s_7_5r,doub
         p_min.z=0;
         traj_min.points.push_back(p_min);
     }
+    for(int i=0;i<len_t_list/3;++i){
+        geometry_msgs::Point p_used;
+        p_used.x=s_min[i][0];
+        p_used.y=s_min[i][1];
+        p_used.z=0;
+        traj_used.points.push_back(p_used);
+    }
+
+
+    geometry_msgs::Point p_input;
+    p_input.x=s_min[4][0];
+    p_input.y=s_min[4][1];
+    p_input.z=0;
+    traj_input.points.push_back(p_input);
+
+    geometry_msgs::Point p_global;
+    p_global.x=road_x[index_global_goal];
+    p_global.y=road_y[index_global_goal];
+    p_global.z=0;
+    traj_global.points.push_back(p_global);
 
     pub_marker.publish(traj);
     pub_marker.publish(traj_min);
-    //pub_marker.publish(points3);
-    //pub_marker.publish(points_line);
-    //pub_marker.publish(points_line2);
+    pub_marker.publish(traj_used);
+    pub_marker.publish(traj_input);
+    pub_marker.publish(traj_global);
 }
 void lattice_planner(costmap_2d::Costmap2DROS& costmap_ros){
+    auto_navi::motorMsg max_motor;
+    dynamo_msgs::SteeringStepper steeringmsg;
+    std_msgs::Int8 mapSwichmsg;
+
     double s_current_temp[4];
     for (int i=0;i<4;++i){
         s_current_temp[i]=s_current[i];
@@ -273,6 +322,11 @@ void lattice_planner(costmap_2d::Costmap2DROS& costmap_ros){
         }
     }
     //generate the traj using the model simulation
+    //s_list[0]:x
+    //      [1]:y
+    //      [2]:theta
+    //      [3]:v
+    //      [4]:u_angle(not the state but need to be recorded)
     double** s_10l=ode_model_predict(s_current_temp,t_list,len_t_list,u_angle_list_10l,u_engine_list,u_break_list);
     double** s_10r=ode_model_predict(s_current_temp,t_list,len_t_list,u_angle_list_10r,u_engine_list,u_break_list);
     double** s_7_5l=ode_model_predict(s_current_temp,t_list,len_t_list,u_angle_list_7_5l,u_engine_list,u_break_list);
@@ -283,15 +337,20 @@ void lattice_planner(costmap_2d::Costmap2DROS& costmap_ros){
     double** s_2_5r=ode_model_predict(s_current_temp,t_list,len_t_list,u_angle_list_2_5r,u_engine_list,u_break_list);
     double** s_0=ode_model_predict(s_current_temp,t_list,len_t_list,u_angle_list_0,u_engine_list,u_break_list);
     //score the traj
-    double score_10l=score_traj(costmap_ros,s_10l,len_t_list);
-    double score_10r=score_traj(costmap_ros,s_10r,len_t_list);
-    double score_7_5l=score_traj(costmap_ros,s_7_5l,len_t_list);
-    double score_7_5r=score_traj(costmap_ros,s_7_5r,len_t_list);
-    double score_5l=score_traj(costmap_ros,s_5l,len_t_list);
-    double score_5r=score_traj(costmap_ros,s_5r,len_t_list);
-    double score_2_5l=score_traj(costmap_ros,s_2_5l,len_t_list);
-    double score_2_5r=score_traj(costmap_ros,s_2_5r,len_t_list);
-    double score_0=score_traj(costmap_ros,s_0,len_t_list);
+    int index_global_goal=(drive_dist+dis_find_global)/1.0;
+    //we have to wait until the map is updated
+    ros::Rate r(100.0);
+    while (ros::ok() && !costmap_ros.isInitialized())
+        r.sleep();
+    double score_10l=score_traj(costmap_ros,s_10l,len_t_list,index_global_goal);
+    double score_10r=score_traj(costmap_ros,s_10r,len_t_list,index_global_goal);
+    double score_7_5l=score_traj(costmap_ros,s_7_5l,len_t_list,index_global_goal);
+    double score_7_5r=score_traj(costmap_ros,s_7_5r,len_t_list,index_global_goal);
+    double score_5l=score_traj(costmap_ros,s_5l,len_t_list,index_global_goal);
+    double score_5r=score_traj(costmap_ros,s_5r,len_t_list,index_global_goal);
+    double score_2_5l=score_traj(costmap_ros,s_2_5l,len_t_list,index_global_goal);
+    double score_2_5r=score_traj(costmap_ros,s_2_5r,len_t_list,index_global_goal);
+    double score_0=score_traj(costmap_ros,s_0,len_t_list,index_global_goal);
 
     multimap<double,double**> score_s_list;
     score_s_list.insert(make_pair(score_10l,s_10l));
@@ -326,19 +385,31 @@ void lattice_planner(costmap_2d::Costmap2DROS& costmap_ros){
         traj_select=score_s_list.begin()->second;
     }
 
-    /*
-    if(score_min==0.0 && score_s_list.count(score_min)>1) {
-        ROS_INFO("more than 1 traj's score is 0, skip this time,use 0 steering as selected traj");
-        traj_select=s_0;
-    }
-    else{
-        ROS_INFO("Min traj found");
-        traj_select=score_s_list.begin()->second;
-    }
-     */
     std::cout<<"10l:"<<score_10l<<"\n"<< "10r:"<<score_10r<<"\n" << "7.5l:"<<score_7_5l<<"\n" << "7.5r:"<<score_7_5r<<"\n"<< "5l:"<<score_5l<<"\n"<< "5r:"<<score_5r<<"\n"<< "2.5l:"<<score_2_5l<<"\n" << "2.5r:"<<score_2_5r<<"\n"<< "0:"<<score_0<<std::endl;
 
-    traj_vis(s_10l,s_10r,s_7_5l,s_7_5r,s_5l,s_5r,s_2_5l,s_2_5r,s_0,traj_select,len_t_list);
+    traj_vis(s_10l,s_10r,s_7_5l,s_7_5r,s_5l,s_5r,s_2_5l,s_2_5r,s_0,traj_select,len_t_list,index_global_goal);
+    steering_current=traj_select[5][4];
+    ROS_INFO("STEERING INPUT:%f",steering_current);
+    steeringmsg.steering_angle = steering_current*180/PI;
+    steeringmsg.steering_stepper_engaged = 1;
+
+    if(score_s_list.count(DBL_MAX)>4) {
+        max_motor.fast = 0;//fast:0 ->>>>use the pair of slow speed fast:1 ->>>>use the pair of fast speed
+    }
+    else{
+        max_motor.fast= 1;
+    }
+    if(score_s_list.count(DBL_MAX)>7){
+        mapSwichmsg.data=1;
+    }
+    else{
+        mapSwichmsg.data=0;
+    }
+
+    mapSwitch.publish(mapSwichmsg);
+    motoPub.publish(max_motor);
+    steerPub.publish(steeringmsg);
+
     delete_s_array(s_10l,len_t_list);
     delete_s_array(s_10r,len_t_list);
     delete_s_array(s_7_5l,len_t_list);
@@ -349,25 +420,39 @@ void lattice_planner(costmap_2d::Costmap2DROS& costmap_ros){
     delete_s_array(s_2_5r,len_t_list);
     delete_s_array(s_0,len_t_list);
     traj_select= nullptr;
-    steering_current=0;
+
 }
-double score_traj(costmap_2d::Costmap2DROS& costmap_ros,double** s_array,int len_t_list){
-    double score=0.0,cost=0.0;
+double score_traj(costmap_2d::Costmap2DROS& costmap_ros,double** s_array,int len_t_list, int& index_global_goal){
+    double score=0.0,cost_obstacle=0.0;
     bool trans_succ=true;
     unsigned int x_map=0,y_map=0;
-    costmap_2d::Costmap2D map=*(costmap_ros.getLayeredCostmap()->getCostmap());
+    double cost_global;
+    if (index_global_goal>road_x.size())
+        index_global_goal=road_x.size();
+    float x_global_goal=road_x[index_global_goal];
+    float y_global_goal=road_y[index_global_goal];
+    costmap_2d::Costmap2D map=*(costmap_ros.getCostmap());
+    //cout<<"initialized:"<<costmap_ros.getLayeredCostmap()->isInitialized()<<endl;
     for(int i=0;i<len_t_list;++i){
         trans_succ=map.worldToMap(s_array[i][0],s_array[i][1],x_map,y_map);
         if(trans_succ) {
-            //std::cout << static_cast<double>(costmap_ros.getLayeredCostmap()->getCostmap()->getCost(x_map, y_map)) << std::endl;
-            //std::cout<<x_map<<"\n"<<y_map<<std::endl;
-            cost=static_cast<double>(map.getCost(x_map, y_map));
-            ROS_INFO("cost: %f",cost);
-            score += cost;
+            cost_obstacle=static_cast<double>(map.getCost(x_map, y_map));
+            //ROS_INFO("cost: %f",cost);
+            if (cost_obstacle==254.0){
+                score=DBL_MAX;
+                break;
+            }
+            score += cost_obstacle/255.0;
         }
         else{
             //std::cout<<"trans from world to map failed"<<std::endl;
         }
+        cost_global+=(pow(s_array[i][0]-x_global_goal,2)+pow(s_array[i][1]-y_global_goal,2));
+    }
+    ROS_INFO("cost_obstacle:#####  %f", score);
+    if(score!=DBL_MAX){
+        score+=cost_global/len_t_list;
+        ROS_INFO("cost_global:#####  %f", cost_global/len_t_list);
     }
     return score;
 }
@@ -382,8 +467,24 @@ int main(int argc, char** argv)
     ros::Subscriber sub_odom = nh.subscribe("car_pose_estimate", 1000, odomCallback);
     ros::Subscriber sub_teensyread = nh.subscribe("teensy_read", 10, teensyCallback);
 
+    mapSwitch = nh.advertise<std_msgs::Int8>("map_switch", 1);
     pub_marker = nh.advertise<visualization_msgs::Marker>("lattice_marker", 0);
-    float loop_Rate = 20; //[Hz]
+    motoPub = nh.advertise<auto_navi::motorMsg>("fast", 1);
+    steerPub = nh.advertise<dynamo_msgs::SteeringStepper>("cmd_steering_angle_goal", 100);
+
+    float x=0.0,y=0.0;
+    FILE *fp;
+    fp=fopen(file,"r");
+    while(1){
+        fscanf(fp,"%f,%f",&x,&y);
+        road_x.push_back(x);
+        road_y.push_back(y);
+        if (feof(fp)) break;
+    }
+    fclose(fp);
+
+
+    float loop_Rate = 5; //[Hz]
     ros::Rate r(loop_Rate);
     ROS_INFO("Main loop.");
     while (ros::ok()) {

@@ -353,13 +353,13 @@ void ObstacleLayer::updateBounds(double robot_x, double robot_y, double robot_ya
   current_ = current;
 
   // raytrace freespace
-  
+  /*
   for (unsigned int i = 0; i < clearing_observations.size(); ++i)
   {
     raytraceFreespace(clearing_observations[i], min_x, min_y, max_x, max_y);
     //ROS_INFO("obstacle raytraced");
   }
-
+*/
   // place the new obstacles into a priority queue... each with a priority of zero to begin with
   for (std::vector<Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it)
   {
@@ -374,7 +374,7 @@ void ObstacleLayer::updateBounds(double robot_x, double robot_y, double robot_ya
     sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud, "z");
     //ROS_INFO("obstacle marking  cycle1");
     //DLSH ADD
-    bool flag=(iter_x!=iter_x.end());
+    //bool flag=(iter_x!=iter_x.end());
     //ROS_INFO("%s", flag ? "true" : "false");
     for (; iter_x !=iter_x.end(); ++iter_x, ++iter_y, ++iter_z)
     {
@@ -440,7 +440,7 @@ void ObstacleLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, i
   {
     setConvexPolygonCost(transformed_footprint_, costmap_2d::FREE_SPACE);
   }
-
+  //ROS_INFO("combination_method_: %d",combination_method_);
   switch (combination_method_)
   {
     case 0:  // Overwrite

@@ -151,7 +151,7 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
     (*plugin)->updateCosts(costmap_, x0, y0, xn, yn);
     ROS_INFO("updateCost finished");
   }
-
+  //ROS_INFO("is sizelocked: %d",isSizeLocked());
   bx0_ = x0;
   bxn_ = xn;
   by0_ = y0;
