@@ -39,7 +39,7 @@ int traj_history_id=10;
 
 const char* file="/home/dlsh/Ecocar_offline_path_optimization/result_analysis/mue=0.9/traj_opt.csv";
 vector<float> road_x,road_y;
-const double dis_find_global=8.0;//[m]
+const double dis_find_global=10.0;//[m]
 double drive_dist=0.0;
 
 ros::Publisher pub_marker;
@@ -48,13 +48,15 @@ ros::Publisher steerPub;
 ros::Publisher mapSwitch;
 void fill_steering_input_array(double* array,double len_t_list,double steering_goal);
 double** ode_model_predict(double* s0,double* t_list,int len_t_list,double* u_angle_list, double* u_engin_list,double* u_break_list);
-void traj_vis(double** s_10l,double** s_10r,double** s_7_5l,double** s_7_5r,double** s_5l,double** s_5r,double** s_2_5l,double** s_2_5r,double** s_0, double** s_min,int len_t_list, int index_global_goal);
+void traj_vis(double** s_15l,double** s_15r,double** s_12_5l,double** s_12_5r, double** s_10l,double** s_10r,double** s_7_5l,double** s_7_5r,double** s_5l,double** s_5r,double** s_2_5l,double** s_2_5r,double** s_0, double** s_min,int len_t_list, int index_global_goal);
 void delete_s_array(double** s_array,int len_t_list);
 void odomCallback(const std_msgs::Float32MultiArray::ConstPtr &msg_odom);
 void teensyCallback(const dynamo_msgs::TeensyReadPtr &msg);
 //double score_traj(costmap_2d::Costmap2D* map,double** s_array,int len_t_list);
 double score_traj(costmap_2d::Costmap2DROS& map,double** s_array,int len_t_list, int& index_global_goal);
+double score_traj_only_global(costmap_2d::Costmap2DROS& costmap_ros,double** s_array,int len_t_list, int& index_global_goal);
 void lattice_planner(costmap_2d::Costmap2DROS& costmap_ros);
+int switch_map(costmap_2d::Costmap2DROS& costmap_ros);
 
 
 
@@ -127,7 +129,7 @@ void teensyCallback(const dynamo_msgs::TeensyReadPtr &msg) {
     s_current[3] = msg->speed_wheel;
 }
 
-void traj_vis(double** s_10l,double** s_10r,double** s_7_5l,double** s_7_5r,double** s_5l,double** s_5r,double** s_2_5l,double** s_2_5r,double** s_0, double** s_min,int len_t_list, int index_global_goal) {
+void traj_vis(double** s_15l,double** s_15r,double** s_12_5l,double** s_12_5r, double** s_10l,double** s_10r,double** s_7_5l,double** s_7_5r,double** s_5l,double** s_5r,double** s_2_5l,double** s_2_5r,double** s_0, double** s_min,int len_t_list, int index_global_goal) {
     visualization_msgs::Marker traj, traj_min, traj_used, traj_input,traj_global;
     ros::Duration one_sec(.4);
 
@@ -204,7 +206,19 @@ void traj_vis(double** s_10l,double** s_10r,double** s_7_5l,double** s_7_5r,doub
     traj_global.color.a = 1.0;
 
     for (int i = 0; i < len_t_list; i++) {
-        geometry_msgs::Point p_10l, p_10r, p_7_5l, p_7_5r, p_5l, p_5r,p_2_5l, p_2_5r, p_0;
+        geometry_msgs::Point p_15l, p_15r, p_12_5l, p_12_5r,p_10l, p_10r, p_7_5l, p_7_5r, p_5l, p_5r,p_2_5l, p_2_5r, p_0;
+        p_15l.x = s_15l[i][0];
+        p_15l.y = s_15l[i][1];
+        p_15l.z = 0;
+        p_15r.x = s_15r[i][0];
+        p_15r.y = s_15r[i][1];
+        p_15r.z = 0;
+        p_12_5l.x = s_12_5l[i][0];
+        p_12_5l.y = s_12_5l[i][1];
+        p_12_5l.z = 0;
+        p_12_5r.x = s_12_5r[i][0];
+        p_12_5r.y = s_12_5r[i][1];
+        p_12_5r.z = 0;
         p_10l.x = s_10l[i][0];
         p_10l.y = s_10l[i][1];
         p_10l.z = 0;
@@ -232,6 +246,10 @@ void traj_vis(double** s_10l,double** s_10r,double** s_7_5l,double** s_7_5r,doub
         p_0.x = s_0[i][0];
         p_0.y = s_0[i][1];
         p_0.z = 0;
+        traj.points.push_back(p_15l);
+        traj.points.push_back(p_15r);
+        traj.points.push_back(p_12_5l);
+        traj.points.push_back(p_12_5r);
         traj.points.push_back(p_10l);
         traj.points.push_back(p_10r);
         traj.points.push_back(p_7_5l);
@@ -289,10 +307,14 @@ void lattice_planner(costmap_2d::Costmap2DROS& costmap_ros){
     //time input
     int len_t_list=T_final/Ts+1;
     double t_list[len_t_list];
-    double u_angle_list_10l[len_t_list],u_angle_list_10r[len_t_list],u_angle_list_7_5l[len_t_list],u_angle_list_7_5r[len_t_list],u_angle_list_5l[len_t_list],u_angle_list_5r[len_t_list],u_angle_list_2_5l[len_t_list],u_angle_list_2_5r[len_t_list],u_angle_list_0[len_t_list];
+    double u_angle_list_15l[len_t_list],u_angle_list_15r[len_t_list],u_angle_list_12_5l[len_t_list],u_angle_list_12_5r[len_t_list],u_angle_list_10l[len_t_list],u_angle_list_10r[len_t_list],u_angle_list_7_5l[len_t_list],u_angle_list_7_5r[len_t_list],u_angle_list_5l[len_t_list],u_angle_list_5r[len_t_list],u_angle_list_2_5l[len_t_list],u_angle_list_2_5r[len_t_list],u_angle_list_0[len_t_list];
     double u_engine_list[len_t_list];
     double u_break_list[len_t_list];
     //steering input
+    fill_steering_input_array(u_angle_list_15l,len_t_list,0.261799);
+    fill_steering_input_array(u_angle_list_15r,len_t_list,-0.261799);
+    fill_steering_input_array(u_angle_list_12_5l,len_t_list,0.218166);
+    fill_steering_input_array(u_angle_list_12_5r,len_t_list,-0.218166);
     fill_steering_input_array(u_angle_list_10l,len_t_list,0.17453);
     fill_steering_input_array(u_angle_list_10r,len_t_list,-0.17453);
     fill_steering_input_array(u_angle_list_7_5l,len_t_list,0.130899);
@@ -302,6 +324,8 @@ void lattice_planner(costmap_2d::Costmap2DROS& costmap_ros){
     fill_steering_input_array(u_angle_list_2_5l,len_t_list,0.043633);
     fill_steering_input_array(u_angle_list_2_5r,len_t_list,-0.043633);
     fill_steering_input_array(u_angle_list_0,len_t_list,0);
+
+
     bool gear_change=s_current_temp[3]>speed_switch;
     bool engin_close=s_current_temp[3]>speed_toofast;
     for(int i=0;i<len_t_list;++i){
@@ -327,6 +351,10 @@ void lattice_planner(costmap_2d::Costmap2DROS& costmap_ros){
     //      [2]:theta
     //      [3]:v
     //      [4]:u_angle(not the state but need to be recorded)
+    double** s_15l=ode_model_predict(s_current_temp,t_list,len_t_list,u_angle_list_15l,u_engine_list,u_break_list);
+    double** s_15r=ode_model_predict(s_current_temp,t_list,len_t_list,u_angle_list_15r,u_engine_list,u_break_list);
+    double** s_12_5l=ode_model_predict(s_current_temp,t_list,len_t_list,u_angle_list_12_5l,u_engine_list,u_break_list);
+    double** s_12_5r=ode_model_predict(s_current_temp,t_list,len_t_list,u_angle_list_12_5r,u_engine_list,u_break_list);
     double** s_10l=ode_model_predict(s_current_temp,t_list,len_t_list,u_angle_list_10l,u_engine_list,u_break_list);
     double** s_10r=ode_model_predict(s_current_temp,t_list,len_t_list,u_angle_list_10r,u_engine_list,u_break_list);
     double** s_7_5l=ode_model_predict(s_current_temp,t_list,len_t_list,u_angle_list_7_5l,u_engine_list,u_break_list);
@@ -342,6 +370,10 @@ void lattice_planner(costmap_2d::Costmap2DROS& costmap_ros){
     ros::Rate r(100.0);
     while (ros::ok() && !costmap_ros.isInitialized())
         r.sleep();
+    double score_15l=score_traj(costmap_ros,s_15l,len_t_list,index_global_goal);
+    double score_15r=score_traj(costmap_ros,s_15r,len_t_list,index_global_goal);
+    double score_12_5l=score_traj(costmap_ros,s_12_5l,len_t_list,index_global_goal);
+    double score_12_5r=score_traj(costmap_ros,s_12_5r,len_t_list,index_global_goal);
     double score_10l=score_traj(costmap_ros,s_10l,len_t_list,index_global_goal);
     double score_10r=score_traj(costmap_ros,s_10r,len_t_list,index_global_goal);
     double score_7_5l=score_traj(costmap_ros,s_7_5l,len_t_list,index_global_goal);
@@ -353,6 +385,10 @@ void lattice_planner(costmap_2d::Costmap2DROS& costmap_ros){
     double score_0=score_traj(costmap_ros,s_0,len_t_list,index_global_goal);
 
     multimap<double,double**> score_s_list;
+    score_s_list.insert(make_pair(score_15l,s_15l));
+    score_s_list.insert(make_pair(score_15r,s_15r));
+    score_s_list.insert(make_pair(score_12_5l,s_12_5l));
+    score_s_list.insert(make_pair(score_12_5r,s_12_5r));
     score_s_list.insert(make_pair(score_10l,s_10l));
     score_s_list.insert(make_pair(score_10r,s_10r));
     score_s_list.insert(make_pair(score_7_5l,s_7_5l));
@@ -363,11 +399,18 @@ void lattice_planner(costmap_2d::Costmap2DROS& costmap_ros){
     score_s_list.insert(make_pair(score_2_5r,s_2_5r));
     score_s_list.insert(make_pair(score_0,s_0));
 
+    if(score_s_list.count(DBL_MAX)>6) {
+        max_motor.fast = 0;//fast:0 ->>>>use the pair of slow speed fast:1 ->>>>use the pair of fast speed
+    }
+    else{
+        max_motor.fast= 1;
+    }
+
     double score_min=score_s_list.begin()->first;
     double** traj_select;
     typedef std::multimap<double,double**>::iterator multimap_iterator;
 
-    if(score_min==0.0 && score_s_list.count(score_min)<9) {
+    if(score_min==0.0 && score_s_list.count(score_min)<13) {
         ROS_INFO("more than 1 traj's score is 0");
         pair<multimap_iterator,multimap_iterator> it =score_s_list.equal_range(score_min);
         while (it.first!=it.second)
@@ -376,40 +419,71 @@ void lattice_planner(costmap_2d::Costmap2DROS& costmap_ros){
         }
         traj_select=score_s_list.begin()->second;
     }
-    else if(score_s_list.count(score_min)>=9){
-        ROS_INFO("all traj is score 0,skip this time,use 0 steering as selected traj");
-        traj_select=s_0;
+    else if(score_s_list.count(score_min)>=13){
+        if(score_min==DBL_MAX||score_min==0.0){
+            ROS_INFO("all traj is score DBL_MAX, the score will be recomputed only based on the global goal");
+            score_15l=score_traj_only_global(costmap_ros,s_15l,len_t_list,index_global_goal);
+            score_15r=score_traj_only_global(costmap_ros,s_15r,len_t_list,index_global_goal);
+            score_12_5l=score_traj_only_global(costmap_ros,s_12_5l,len_t_list,index_global_goal);
+            score_12_5r=score_traj(costmap_ros,s_12_5r,len_t_list,index_global_goal);
+            score_10l=score_traj_only_global(costmap_ros,s_10l,len_t_list,index_global_goal);
+            score_10r=score_traj_only_global(costmap_ros,s_10r,len_t_list,index_global_goal);
+            score_7_5l=score_traj_only_global(costmap_ros,s_7_5l,len_t_list,index_global_goal);
+            score_7_5r=score_traj_only_global(costmap_ros,s_7_5r,len_t_list,index_global_goal);
+            score_5l=score_traj_only_global(costmap_ros,s_5l,len_t_list,index_global_goal);
+            score_5r=score_traj_only_global(costmap_ros,s_5r,len_t_list,index_global_goal);
+            score_2_5l=score_traj_only_global(costmap_ros,s_2_5l,len_t_list,index_global_goal);
+            score_2_5r=score_traj_only_global(costmap_ros,s_2_5r,len_t_list,index_global_goal);
+            score_0=score_traj_only_global(costmap_ros,s_0,len_t_list,index_global_goal);
+
+            multimap<double,double**> score_s_list_global;
+            score_s_list_global.insert(make_pair(score_15l,s_15l));
+            score_s_list_global.insert(make_pair(score_15r,s_15r));
+            score_s_list_global.insert(make_pair(score_12_5l,s_12_5l));
+            score_s_list_global.insert(make_pair(score_12_5r,s_12_5r));
+            score_s_list_global.insert(make_pair(score_10l,s_10l));
+            score_s_list_global.insert(make_pair(score_10r,s_10r));
+            score_s_list_global.insert(make_pair(score_7_5l,s_7_5l));
+            score_s_list_global.insert(make_pair(score_7_5r,s_7_5r));
+            score_s_list_global.insert(make_pair(score_5l,s_5l));
+            score_s_list_global.insert(make_pair(score_5r,s_5r));
+            score_s_list_global.insert(make_pair(score_2_5l,s_2_5l));
+            score_s_list_global.insert(make_pair(score_2_5r,s_2_5r));
+            score_s_list_global.insert(make_pair(score_0,s_0));
+            traj_select=score_s_list_global.begin()->second;
+            max_motor.fast = 0;
+        }
+        else{
+            ROS_INFO("all traj is score 0,skip this time,use 0 steering as selected traj");
+            traj_select=s_0;
+        }
+
     }
     else{
         ROS_INFO("Min traj found");
         traj_select=score_s_list.begin()->second;
     }
 
-    std::cout<<"10l:"<<score_10l<<"\n"<< "10r:"<<score_10r<<"\n" << "7.5l:"<<score_7_5l<<"\n" << "7.5r:"<<score_7_5r<<"\n"<< "5l:"<<score_5l<<"\n"<< "5r:"<<score_5r<<"\n"<< "2.5l:"<<score_2_5l<<"\n" << "2.5r:"<<score_2_5r<<"\n"<< "0:"<<score_0<<std::endl;
+    std::cout<<"15l:"<<score_15l<<"\n"<< "15r:"<<score_15r<<"\n" << "12.5l:"<<score_12_5l<<"\n" << "12.5r:"<<score_12_5r<<"\n"<<"10l:"<<score_10l<<"\n"<< "10r:"<<score_10r<<"\n" << "7.5l:"<<score_7_5l<<"\n" << "7.5r:"<<score_7_5r<<"\n"<< "5l:"<<score_5l<<"\n"<< "5r:"<<score_5r<<"\n"<< "2.5l:"<<score_2_5l<<"\n" << "2.5r:"<<score_2_5r<<"\n"<< "0:"<<score_0<<std::endl;
 
-    traj_vis(s_10l,s_10r,s_7_5l,s_7_5r,s_5l,s_5r,s_2_5l,s_2_5r,s_0,traj_select,len_t_list,index_global_goal);
+    traj_vis(s_15l,s_15r,s_12_5l,s_12_5r,s_10l,s_10r,s_7_5l,s_7_5r,s_5l,s_5r,s_2_5l,s_2_5r,s_0,traj_select,len_t_list,index_global_goal);
+    //considering the computing time, the offset should be set
     steering_current=traj_select[5][4];
     ROS_INFO("STEERING INPUT:%f",steering_current);
     steeringmsg.steering_angle = steering_current*180/PI;
     steeringmsg.steering_stepper_engaged = 1;
 
-    if(score_s_list.count(DBL_MAX)>4) {
-        max_motor.fast = 0;//fast:0 ->>>>use the pair of slow speed fast:1 ->>>>use the pair of fast speed
-    }
-    else{
-        max_motor.fast= 1;
-    }
-    if(score_s_list.count(DBL_MAX)>7){
-        mapSwichmsg.data=1;
-    }
-    else{
-        mapSwichmsg.data=0;
-    }
 
+    mapSwichmsg.data=switch_map(costmap_ros);
+    //mapSwichmsg.data=0;
     mapSwitch.publish(mapSwichmsg);
     motoPub.publish(max_motor);
     steerPub.publish(steeringmsg);
 
+    delete_s_array(s_15l,len_t_list);
+    delete_s_array(s_15r,len_t_list);
+    delete_s_array(s_12_5l,len_t_list);
+    delete_s_array(s_12_5r,len_t_list);
     delete_s_array(s_10l,len_t_list);
     delete_s_array(s_10r,len_t_list);
     delete_s_array(s_7_5l,len_t_list);
@@ -426,11 +500,11 @@ double score_traj(costmap_2d::Costmap2DROS& costmap_ros,double** s_array,int len
     double score=0.0,cost_obstacle=0.0;
     bool trans_succ=true;
     unsigned int x_map=0,y_map=0;
-    double cost_global;
+    double cost_global=0.0;
     if (index_global_goal>road_x.size())
         index_global_goal=road_x.size();
-    float x_global_goal=road_x[index_global_goal];
-    float y_global_goal=road_y[index_global_goal];
+    double x_global_goal=road_x[index_global_goal];
+    double y_global_goal=road_y[index_global_goal];
     costmap_2d::Costmap2D map=*(costmap_ros.getCostmap());
     //cout<<"initialized:"<<costmap_ros.getLayeredCostmap()->isInitialized()<<endl;
     for(int i=0;i<len_t_list;++i){
@@ -442,19 +516,140 @@ double score_traj(costmap_2d::Costmap2DROS& costmap_ros,double** s_array,int len
                 score=DBL_MAX;
                 break;
             }
-            score += cost_obstacle/255.0;
-        }
-        else{
-            //std::cout<<"trans from world to map failed"<<std::endl;
+            score += cost_obstacle/100.0;
         }
         cost_global+=(pow(s_array[i][0]-x_global_goal,2)+pow(s_array[i][1]-y_global_goal,2));
+        //cost_global+=(pow(s_array[i][0]-x_global_goal,2)+pow(s_array[i][1]-y_global_goal,2));
     }
     ROS_INFO("cost_obstacle:#####  %f", score);
     if(score!=DBL_MAX){
-        score+=cost_global/len_t_list;
-        ROS_INFO("cost_global:#####  %f", cost_global/len_t_list);
+        score+=sqrt(cost_global/len_t_list);
+        ROS_INFO("cost_global:#####  %f", sqrt(cost_global/len_t_list));
     }
     return score;
+}
+double score_traj_only_global(costmap_2d::Costmap2DROS& costmap_ros,double** s_array,int len_t_list, int& index_global_goal){
+    double score=0.0;
+    double cost_global=0.0;
+    if (index_global_goal>road_x.size())
+        index_global_goal=road_x.size();
+    float x_global_goal=road_x[index_global_goal];
+    float y_global_goal=road_y[index_global_goal];
+    costmap_2d::Costmap2D map=*(costmap_ros.getCostmap());
+    for(int i=0;i<len_t_list;++i){
+        cost_global+=(pow(s_array[i][0]-x_global_goal,2)+pow(s_array[i][1]-y_global_goal,2));
+    }
+    score+=sqrt(cost_global/len_t_list);
+    ROS_INFO("cost_global:#####  %f", sqrt(cost_global/len_t_list));
+    return score;
+}
+
+int switch_map(costmap_2d::Costmap2DROS& costmap_ros){
+    double map_width1=22.0,map_height1=16.0,map_width2=16.0,map_height2=22.0;
+    double carpose_theta=s_current[2];
+    int switchMap=0;
+    int flag_ahead_rear=0;//1: x,ahead 2:x,rear 3:y,ahead 4:y,rear
+    int index_check_free_x1=0,index_check_free_x2=0;//for pattern1
+    int index_check_free_y1=0,index_check_free_y2=0;//for pattern2
+    int num_free_1=0,num_free_2=0,num_threshold=10;
+
+    //limit the theta into [-3.14 3.14)
+    while(carpose_theta<-3.14){
+        carpose_theta=carpose_theta+6.28;
+    }
+    while(carpose_theta>=3.14){
+        carpose_theta=carpose_theta-6.28;
+    }
+
+    //check the map direction by car's orientation
+    if(carpose_theta>=-0.785&&carpose_theta<=0.785){
+        flag_ahead_rear=1;
+    }
+    else if((carpose_theta<=-2.355)||(carpose_theta>=2.355)){
+        flag_ahead_rear=2;
+    }
+    else if((carpose_theta<=2.355)&&(carpose_theta>=0.785)){
+        flag_ahead_rear=3;
+    }
+    else{
+        flag_ahead_rear=4;
+    }
+
+
+    if(costmap_ros.getCostmap()->getSizeInMetersX()>map_height1){
+        //map size pattern1
+        //check the ahead of the map
+        if(flag_ahead_rear==1) {
+            index_check_free_x1 = costmap_ros.getCostmap()->getSizeInCellsX() * 5 / 6;
+            for (int i = 0; i < costmap_ros.getCostmap()->getSizeInCellsY(); ++i) {
+                if (costmap_ros.getCostmap()->getCost(index_check_free_x1, i) == 0) {
+                    num_free_1++;
+                }
+            }
+            index_check_free_x2 = index_check_free_x1 + 1;
+            for (int i = 0; i < costmap_ros.getCostmap()->getSizeInCellsY(); ++i) {
+                if (costmap_ros.getCostmap()->getCost(index_check_free_x2, i) == 0) {
+                    num_free_2++;
+                }
+            }
+        }
+        else{
+            //check the rear of the map
+            index_check_free_x1=costmap_ros.getCostmap()->getSizeInCellsX()*1/6;
+            for(int i=0;i<costmap_ros.getCostmap()->getSizeInCellsY();++i){
+                if(costmap_ros.getCostmap()->getCost(index_check_free_x1,i)==0){
+                    num_free_1++;
+                }
+            }
+            index_check_free_x2=index_check_free_x1-1;
+            for(int i=0;i<costmap_ros.getCostmap()->getSizeInCellsY();++i){
+                if(costmap_ros.getCostmap()->getCost(index_check_free_x2,i)==0){
+                    num_free_2++;
+                }
+            }
+        }
+        if((num_free_1>num_threshold&&num_free_2>num_threshold))
+            switchMap=1;
+    }
+    else{
+        //map size pattern2
+        //check the ahead of the map
+        if(flag_ahead_rear==3){
+            index_check_free_y1=costmap_ros.getCostmap()->getSizeInCellsY()*5/6;
+            for(int i=0;i<costmap_ros.getCostmap()->getSizeInCellsX();++i){
+                if(costmap_ros.getCostmap()->getCost(i,index_check_free_y1)==0){
+                    num_free_1++;
+                }
+            }
+            index_check_free_y2=index_check_free_y1+1;
+            for(int i=0;i<costmap_ros.getCostmap()->getSizeInCellsX();++i){
+                if(costmap_ros.getCostmap()->getCost(i,index_check_free_y2)==0){
+                    num_free_2++;
+                }
+            }
+        }
+        else {
+            //check the rear of the map
+            index_check_free_y1 = costmap_ros.getCostmap()->getSizeInCellsY() * 1 / 6;
+            for (int i = 0; i < costmap_ros.getCostmap()->getSizeInCellsX(); ++i) {
+                if (costmap_ros.getCostmap()->getCost(i, index_check_free_y1) == 0) {
+                    num_free_1++;
+                }
+            }
+            index_check_free_y2 = index_check_free_y1 - 1;
+            for (int i = 0; i < costmap_ros.getCostmap()->getSizeInCellsX(); ++i) {
+                if (costmap_ros.getCostmap()->getCost(i, index_check_free_y2) == 0) {
+                    num_free_2++;
+                }
+            }
+        }
+        if((num_free_1>num_threshold&&num_free_2>num_threshold))
+            switchMap=1;
+    }
+    ROS_INFO("if it is rear or head: #######%d",flag_ahead_rear);
+    ROS_INFO("how many free grids for ahead 5/6:###### %d",num_free_1);
+    ROS_INFO("how many free grids for rear 1/6-1:###### %d",num_free_2);
+    return switchMap;
 }
 int main(int argc, char** argv)
 {

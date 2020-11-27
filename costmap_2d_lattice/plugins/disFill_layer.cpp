@@ -126,7 +126,7 @@ void disFillLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, in
   }
 //Because the obstacle points are sparse, we need to fill the obstacle points
 //ROS_INFO("START FILL");
-  const int obs_num_col_road=15;
+  const int obs_num_col_road=18;
   const int obs_num_col_noise=6;
   const int road_width=9;
   double thresh_road_x=0.5*(size_x-road_width)+2;

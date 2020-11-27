@@ -639,7 +639,7 @@ void Costmap2DROS::mapSizeCarPoseCallback(const std_msgs::Float32MultiArray::Con
   double  map_meter_height2=22.0;
   //ROS_INFO("car_dist:###  %f",car_dist);
   //ROS_INFO("car_dist_switch:###  %f",car_dist_switch);
-  if(map_switch==1&&(abs(car_dist-car_dist_switch)>threshold||car_dist_switch==0.0)){
+  if(map_switch==1&&(abs(car_dist-car_dist_switch)>threshold||car_dist_switch==0.0)&&car_dist>1){
       ROS_INFO("MAP size width: #####  %f",layered_costmap_->getCostmap()->getSizeInMetersX());
       if(layered_costmap_->getCostmap()->getSizeInMetersX()>(map_meter_width1-2)){
         ROS_INFO("map size pattern1, change to pattern2");
