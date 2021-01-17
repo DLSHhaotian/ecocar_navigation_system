@@ -73,8 +73,8 @@ void odomCallback(const std_msgs::Float32MultiArray::ConstPtr &msg_odom) {
 }
 void delete_s_array(double** s_array,int len_t_list){
     for(int i = 0; i < len_t_list; i++)
-        delete[] s_array[i];
-    delete[] s_array;
+        delete[] s_array[i];//删除s_array每一行的子数组的指针，每个指针都指向容量为5的子数组
+    delete[] s_array;//删除大指针，指向第一个子数组，同时也是指向整个二维数组
     s_array= nullptr;
 }
 void fill_steering_input_array(double* array,double len_t_list,double steering_goal){
@@ -101,9 +101,9 @@ double** ode_model_predict(double* s0,double* t_list,int len_t_list,double* u_an
     double v_last=v, theta_last=theta;
     double a_drag=0.0;
     //Apply for dynamic memory
-    double **s_list = new double*[len_t_list];
+    double **s_list = new double*[len_t_list];//先new一个大指针，包含了所有数量的子数组，子数组具体多大不管，关注的是有多少行
     for(int i = 0; i < len_t_list; i++)
-        s_list[i] = new double[5];
+        s_list[i] = new double[5];//遍历每个小指针，new固定数量的子数组给这个小指针
 
     //ode forward simulation
     for(int i=0;i<len_t_list;++i){
