@@ -1,5 +1,0 @@
-<launch>
-  <!-- Load the hello_ros_robot URDF model into the parameter server -->
-    <param name="robot_description" textfile="$(find hello_ros)/urdf/hello_ros_robot_1.urdf" />
- 
-</launch>

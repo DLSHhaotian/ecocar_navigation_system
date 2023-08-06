@@ -1,7 +1,0 @@
-<launch>
-    <include file="$(find jaco_on_table)/launch/jaco_on_table_gazebo_controlled.launch" >
-	<arg name="load_grasp_fix" value="true" />
-    </include>
-    <include file="$(find jaco_on_table_moveit)/launch/jaco_on_table_moveit.launch" />
-    <include file="$(find jaco_on_table_moveit)/launch/jaco_on_table_rviz.launch" />
-</launch>
